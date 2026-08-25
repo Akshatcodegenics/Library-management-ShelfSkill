@@ -15,7 +15,7 @@ ADMIN_SECRET_KEY = os.getenv('ADMIN_SECRET_KEY') or 'library-admin-secret-2026'
 
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = (os.getenv('ALLOWED_HOSTS') or '*').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
