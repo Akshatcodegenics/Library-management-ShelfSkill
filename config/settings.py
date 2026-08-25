@@ -8,10 +8,10 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-dev-key-change-in-production-891234')
+SECRET_KEY = os.getenv('SECRET_KEY') or 'django-insecure-default-dev-key-change-in-production-891234'
 
 # Admin Registration Secret Key (validated on backend for /admin/create-account)
-ADMIN_SECRET_KEY = os.getenv('ADMIN_SECRET_KEY', 'library-admin-secret-2026')
+ADMIN_SECRET_KEY = os.getenv('ADMIN_SECRET_KEY') or 'library-admin-secret-2026'
 
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
