@@ -1,0 +1,567 @@
+{% extends 'user/base_user.html' %}
+{% load static %}
+
+{% block title %}ShelfSkill — Digital Library & Knowledge Platform{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Hero with video background ── */
+  .hero-section {
+    position: relative;
+    padding: 0;
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    color: #fff;
+  }
+  .hero-video-bg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center;
+    z-index: 0;
+  }
+  .hero-video-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(10,48,96,0.55) 0%,
+      rgba(13,110,253,0.40) 40%,
+      rgba(10,48,96,0.65) 100%
+    );
+    z-index: 1;
+  }
+  /* Floating orbs */
+  .hero-section .orb {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,0.05); pointer-events: none; z-index: 1;
+  }
+  .orb-1 { width:380px; height:380px; top:-100px; right:-80px; animation: float 7s ease-in-out infinite; }
+  .orb-2 { width:220px; height:220px; bottom:-60px; left:-40px; animation: float 10s ease-in-out infinite reverse; }
+  .orb-3 { width:120px; height:120px; top:40%; right:12%; animation: float 5s ease-in-out infinite; animation-delay:1.5s; }
+
+  .hero-content { position: relative; z-index: 2; padding: 100px 0 110px; }
+
+  /* Step trail inside hero */
+  .hero-step-trail {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.92);
+    font-weight: 500;
+    margin-bottom: 20px;
+    animation: fadeSlideDown 0.7s ease both;
+  }
+  .hero-step-trail span { color: rgba(255,255,255,0.5); }
+
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Section wrapper ── */
+  .home-section { padding: 70px 0; }
+  .home-section.alt-bg { background: rgba(255,255,255,0.65); backdrop-filter: blur(4px); }
+
+  /* ── Section header decoration ── */
+  .sec-label {
+    font-size: 0.74rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 1.4px; color: var(--primary-blue);
+    margin-bottom: 6px; display: block;
+  }
+  .sec-title { font-size: 1.65rem; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; }
+  .sec-bar {
+    width: 44px; height: 4px;
+    background: linear-gradient(90deg, var(--primary-blue), var(--primary-light));
+    border-radius: 2px; margin-bottom: 6px;
+  }
+
+  /* ── Floating shelf banner ── */
+  .shelf-banner {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+    border-radius: 20px; padding: 48px 40px;
+    color: #fff; position: relative; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(13,110,253,0.30);
+  }
+  .shelf-banner::before {
+    content:''; position:absolute; top:-60px; right:-60px;
+    width:260px; height:260px; border-radius:50%;
+    background:rgba(255,255,255,0.07); pointer-events:none;
+  }
+  .shelf-banner::after {
+    content:''; position:absolute; bottom:-80px; left:20%;
+    width:200px; height:200px; border-radius:50%;
+    background:rgba(255,255,255,0.04); pointer-events:none;
+  }
+
+  /* ── Animated book spine shelf ── */
+  .mini-shelf {
+    display: flex; gap: 6px; flex-wrap: nowrap;
+    overflow: hidden; justify-content: center;
+    padding: 12px 0;
+  }
+  .mini-spine {
+    flex-shrink: 0;
+    width: 32px; height: 110px;
+    border-radius: 4px 2px 2px 4px;
+    display: flex; align-items: center; justify-content: center;
+    writing-mode: vertical-rl;
+    font-size: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.8);
+    letter-spacing: 1px; cursor: pointer;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.20);
+    transition: transform 0.25s ease;
+    overflow: hidden;
+  }
+  .mini-spine:hover { transform: translateY(-10px); }
+
+  /* ── No-results ── */
+  .empty-state { text-align:center; padding: 48px 20px; color: var(--text-muted); }
+  .empty-state i { font-size: 3rem; margin-bottom: 16px; color: var(--sky-blue); }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-14px); }
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════ HERO ══════════════════════════════════════ -->
+<section class="hero-section">
+  <!-- Fullscreen video background -->
+  <video class="hero-video-bg" autoplay muted loop playsinline preload="auto"
+         poster="https://images.unsplash.com/photo-1507842229555-648b2611e03a?auto=format&fit=crop&w=1920&q=80">
+    <source src="{% static 'videos/library_hero.mp4' %}" type="video/mp4">
+  </video>
+  <div class="hero-video-overlay"></div>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="container hero-content text-center">
+    <!-- Step trail badge -->
+    <div class="hero-step-trail animate-fade-up">
+      <i class="fa-solid fa-book-open me-1"></i>
+      Discover Books <span>→</span> Search <span>→</span> Borrow <span>→</span> Track <span>→</span> Return
+    </div>
+
+    <div class="hero-badge animate-fade-up delay-1" style="display:inline-block;">
+      <i class="fa-solid fa-sparkles me-1 text-warning"></i> Next-Gen Digital Library Experience
+    </div>
+
+    <h1 class="hero-title fade-in-up delay-2">Discover Your Next<br>Great Read</h1>
+    <p class="hero-subtitle fade-in-up delay-3">
+      Access thousands of curated books — computer science, fiction classics,<br>technology guides, and academic publications — instantly.
+    </p>
+
+    <!-- Search Bar -->
+    <form action="/books/" method="GET" class="hero-search-box fade-in-up delay-3 mx-auto" style="max-width:560px; display:flex; align-items:center;">
+      <i class="fa-solid fa-magnifying-glass text-white-50 ms-2 me-2 fs-5"></i>
+      <input type="text" name="search" class="hero-search-input form-control flex-fill border-0 bg-transparent text-white py-2"
+             placeholder="Search by title, author, category or ISBN…" style="color:#fff;">
+      <button type="submit" class="hero-search-submit btn ms-2 me-1 px-4 py-2 fw-bold rounded-pill"
+              style="background:#fff; color:var(--primary-blue);">
+        Search
+      </button>
+    </form>
+
+    <!-- CTA Buttons -->
+    <div class="hero-cta-group fade-in-up delay-4">
+      <a href="/books/" class="btn-hero-primary btn">
+        <i class="fa-solid fa-book-open me-2"></i>Explore Catalogue
+      </a>
+      <a href="/signup/" class="btn-hero-outline btn">
+        <i class="fa-solid fa-user-plus me-2"></i>Join Library Free
+      </a>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="hero-stats fade-in-up delay-5">
+      <div class="hero-stat-item">
+        <div class="hero-stat-number" id="stat-total-books">—</div>
+        <div class="hero-stat-label">Books</div>
+      </div>
+      <div class="hero-stat-item">
+        <div class="hero-stat-number" id="stat-categories">—</div>
+        <div class="hero-stat-label">Categories</div>
+      </div>
+      <div class="hero-stat-item">
+        <div class="hero-stat-number">24/7</div>
+        <div class="hero-stat-label">Access</div>
+      </div>
+      <div class="hero-stat-item">
+        <div class="hero-stat-number">100%</div>
+        <div class="hero-stat-label">Digital</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════ FEATURES STRIP ═══════════════════════════ -->
+<div class="features-strip reveal">
+  <div class="container">
+    <div class="row g-4 text-center">
+      <div class="col-6 col-md-3">
+        <div class="feature-item">
+          <div class="feature-icon-wrap mx-auto"><i class="fa-solid fa-book"></i></div>
+          <div class="feature-title">Vast Collection</div>
+          <div class="feature-desc">Thousands of titles across all genres</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="feature-item">
+          <div class="feature-icon-wrap mx-auto"><i class="fa-solid fa-hand-holding-heart"></i></div>
+          <div class="feature-title">Easy Borrowing</div>
+          <div class="feature-desc">Borrow and return with one click</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="feature-item">
+          <div class="feature-icon-wrap mx-auto"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div class="feature-title">Loan History</div>
+          <div class="feature-desc">Track all your past & active loans</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="feature-item">
+          <div class="feature-icon-wrap mx-auto"><i class="fa-solid fa-magnifying-glass"></i></div>
+          <div class="feature-title">Smart Search</div>
+          <div class="feature-desc">Find any book by title, author or ISBN</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ LIBRARY SHELF BANNER ═══════════════════ -->
+<section class="home-section py-5">
+  <div class="container">
+    <div class="shelf-banner reveal">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-5">
+          <span class="badge bg-white text-primary fw-bold px-3 py-2 rounded-pill mb-3 d-inline-block" style="font-size:0.78rem;">
+            <i class="fa-solid fa-bookmark me-1"></i> Virtual Library Shelves
+          </span>
+          <h2 class="fw-800 mb-3" style="font-size:1.7rem; font-weight:800;">Browse Books<br>Like in a Real Library</h2>
+          <p style="color:rgba(255,255,255,0.80); font-size:0.95rem; line-height:1.65;" class="mb-4">
+            Explore our interactive animated bookshelves. See all available titles arranged by category, instantly borrow a book, and track your reading journey.
+          </p>
+          <a href="/shelf/" class="btn-hero-primary btn px-4 py-2 fw-bold" style="display:inline-block;">
+            <i class="fa-solid fa-book-open me-2"></i>Open Library Shelves
+          </a>
+        </div>
+        <div class="col-lg-7">
+          <!-- Animated mini spine shelf -->
+          <div class="mini-shelf" id="mini-shelf-container">
+            <!-- Filled by JS -->
+            <div class="col-12 text-center py-3" id="mini-shelf-loading">
+              <div class="spinner-border text-white opacity-50"></div>
+            </div>
+          </div>
+          <div style="height:10px; background: linear-gradient(180deg, #7a5a1a, #5a3e0f); border-radius:3px; box-shadow:0 4px 10px rgba(0,0,0,0.3); margin-top:2px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ FEATURED BOOKS ══════════════════════════ -->
+<section class="home-section alt-bg">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4 reveal">
+      <div>
+        <span class="sec-label"><i class="fa-solid fa-star me-1"></i>Editor's Choice</span>
+        <h2 class="sec-title">Featured Books</h2>
+        <div class="sec-bar"></div>
+        <p class="section-subtitle mb-0">Handpicked masterpieces recommended by our chief editors</p>
+      </div>
+      <a href="/books/?featured=true" class="btn btn-outline-primary btn-sm rounded-pill px-4 d-none d-md-inline-flex align-items-center gap-1">
+        View All <i class="fa-solid fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+    <div class="row g-4 mb-2" id="featured-books-container">
+      <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ POPULAR BOOKS ══════════════════════════ -->
+<section class="home-section">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4 reveal">
+      <div>
+        <span class="sec-label"><i class="fa-solid fa-fire me-1"></i>Trending Now</span>
+        <h2 class="sec-title">Most Popular Books</h2>
+        <div class="sec-bar"></div>
+        <p class="section-subtitle mb-0">Top titles read by library members this month</p>
+      </div>
+      <a href="/books/?popular=true" class="btn btn-outline-primary btn-sm rounded-pill px-4 d-none d-md-inline-flex align-items-center gap-1">
+        View All <i class="fa-solid fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+    <div class="row g-4" id="popular-books-container">
+      <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ CATEGORIES ══════════════════════════════ -->
+<section class="home-section alt-bg">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <span class="sec-label"><i class="fa-solid fa-layer-group me-1"></i>Explore by Topic</span>
+      <h2 class="sec-title">Browse Categories</h2>
+      <div class="sec-bar mx-auto"></div>
+      <p class="section-subtitle">Pick a subject and dive into our curated collection</p>
+    </div>
+    <div class="row g-3 justify-content-center" id="categories-grid-container">
+      <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ RECENTLY ADDED ══════════════════════════ -->
+<section class="home-section">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4 reveal">
+      <div>
+        <span class="sec-label"><i class="fa-solid fa-clock me-1"></i>Fresh Arrivals</span>
+        <h2 class="sec-title">Recently Added</h2>
+        <div class="sec-bar"></div>
+        <p class="section-subtitle mb-0">New acquisitions freshly added to our collection</p>
+      </div>
+      <a href="/books/" class="btn btn-outline-primary btn-sm rounded-pill px-4 d-none d-md-inline-flex align-items-center gap-1">
+        Full Catalogue <i class="fa-solid fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+    <div class="row g-4" id="recently-added-container">
+      <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ CTA BANNER ══════════════════════════════ -->
+<section style="background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%); padding: 70px 0;">
+  <div class="container text-center reveal">
+    <i class="fa-solid fa-book-open-reader text-white opacity-75 mb-4" style="font-size:3rem;"></i>
+    <h2 style="font-size:2.1rem; font-weight:800; color:#fff; margin-bottom:12px;">Ready to Start Reading?</h2>
+    <p style="color:rgba(255,255,255,0.78); max-width:520px; margin:0 auto 32px; font-size:1.05rem;">
+      Create a free account today and get instant access to thousands of books.
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="/signup/" class="btn btn-light rounded-pill px-5 py-2 fw-bold" style="color:var(--primary-blue);">
+        <i class="fa-solid fa-user-plus me-2"></i>Create Free Account
+      </a>
+      <a href="/books/" class="btn btn-outline-light rounded-pill px-5 py-2 fw-bold">
+        <i class="fa-solid fa-book me-2"></i>Browse First
+      </a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ──────────────────────────────────────────────────────
+   HOME PAGE — Data loading + render helpers
+────────────────────────────────────────────────────── */
+const SPINE_COLORS = [
+  '#1a6fc4','#0a58ca','#1565c0','#0d47a1','#1976d2',
+  '#2196f3','#1e88e5','#42a5f5','#0b5394','#1849a8',
+  '#2563eb','#3b82f6','#60a5fa','#1d4ed8','#1e40af'
+];
+
+function spineColor(i) { return SPINE_COLORS[i % SPINE_COLORS.length]; }
+
+function buildBookCard(b) {
+  const available = b.available_copies > 0;
+  const rating = b.rating || 4.0;
+  const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+  const coverUrl = b.cover_image || `https://picsum.photos/seed/${b.id || Math.random()}/240/320`;
+  return `
+    <div class="col-sm-6 col-md-4 col-lg-3 fade-in-up">
+      <div class="user-book-card card h-100">
+        <div class="book-cover-wrapper">
+          <img src="${coverUrl}" alt="${b.title}" class="book-cover-img" loading="lazy"
+               onerror="this.src='https://picsum.photos/seed/${b.id}/240/320'">
+          <div class="book-cover-overlay">
+            <a href="/books/${b.id}/" class="btn btn-light btn-sm fw-bold rounded-pill w-100">
+              <i class="fa-solid fa-eye me-1"></i>View Details
+            </a>
+          </div>
+          <span class="book-availability ${available ? 'available' : 'unavailable'}">
+            ${available ? `<i class="fa-solid fa-check me-1"></i>${b.available_copies} Left` : '<i class="fa-solid fa-times me-1"></i>Unavailable'}
+          </span>
+        </div>
+        <div class="book-card-body flex-grow-1 d-flex flex-column">
+          <div class="book-card-category">${b.category_name || b.category || 'General'}</div>
+          <div class="book-card-title">${b.title}</div>
+          <div class="book-card-author"><i class="fa-solid fa-user-pen me-1 opacity-50"></i>${b.author_name || b.author || 'Unknown'}</div>
+          <div class="mt-auto d-flex align-items-center justify-content-between">
+            <div class="rating-stars" title="${rating}/5">${stars}</div>
+            <small class="text-muted" style="font-size:0.75rem;">${rating.toFixed(1)} / 5</small>
+          </div>
+        </div>
+        <div class="book-card-footer d-flex gap-2">
+          <a href="/books/${b.id}/" class="btn btn-outline-primary btn-sm flex-fill rounded-pill" style="font-size:0.8rem;">
+            <i class="fa-solid fa-info-circle me-1"></i>Details
+          </a>
+          ${available ? `
+            <button class="btn-borrow btn-sm" onclick="quickBorrow(${b.id}, this)" style="border-radius:10px; font-size:0.8rem;">
+              <i class="fa-solid fa-hand me-1"></i>Borrow
+            </button>` : `
+            <button class="btn btn-secondary btn-sm flex-fill rounded-pill" disabled style="font-size:0.8rem;">Unavailable</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildCategoryCard(cat) {
+  const icons = {
+    'Fiction': 'fa-book',
+    'Science': 'fa-flask',
+    'Technology': 'fa-microchip',
+    'History': 'fa-landmark',
+    'Biography': 'fa-user',
+    'Philosophy': 'fa-lightbulb',
+    'Medicine': 'fa-stethoscope',
+    'Computer Science': 'fa-laptop-code',
+    'Art': 'fa-palette',
+    'Business': 'fa-briefcase',
+    'Mathematics': 'fa-square-root-variable',
+    'Psychology': 'fa-brain',
+    'Literature': 'fa-feather',
+    'Engineering': 'fa-gears',
+    'Economics': 'fa-chart-line'
+  };
+  const icon = icons[cat.name] || 'fa-book-open';
+  return `
+    <div class="col-6 col-sm-4 col-md-3 col-lg-2 fade-in-up">
+      <a href="/books/?category=${encodeURIComponent(cat.name)}" class="text-decoration-none">
+        <div class="category-card">
+          <div class="category-icon"><i class="fa-solid ${icon}"></i></div>
+          <div class="category-name">${cat.name}</div>
+          <div class="category-count">${cat.book_count || ''} books</div>
+        </div>
+      </a>
+    </div>`;
+}
+
+async function loadSection(url, containerId, renderFn, dataKey) {
+  const container = document.getElementById(containerId);
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = data[dataKey] || data.results || data || [];
+    if (!items.length) {
+      container.innerHTML = `<div class="col-12 empty-state"><i class="fa-solid fa-box-open"></i><p>No books found.</p></div>`;
+      return;
+    }
+    container.innerHTML = items.slice(0, 8).map(renderFn).join('');
+    triggerReveal();
+  } catch (e) {
+    container.innerHTML = `<div class="col-12 text-center text-muted py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>Unable to load books.</div>`;
+  }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/books/?page_size=1');
+    const data = await res.json();
+    if (data.count) document.getElementById('stat-total-books').textContent = data.count.toLocaleString() + '+';
+    const catRes = await fetch('/api/categories/');
+    const catData = await catRes.json();
+    const cats = catData.results || catData;
+    if (cats) document.getElementById('stat-categories').textContent = (Array.isArray(cats) ? cats.length : catData.count || '—');
+  } catch(e) {}
+}
+
+async function loadMiniShelf() {
+  try {
+    const res = await fetch('/api/books/?page_size=20');
+    const data = await res.json();
+    const books = data.results || data || [];
+    const container = document.getElementById('mini-shelf-container');
+    document.getElementById('mini-shelf-loading')?.remove();
+    if (!books.length) { container.innerHTML = ''; return; }
+    container.innerHTML = books.slice(0, 18).map((b, i) =>
+      `<div class="mini-spine" style="background:${spineColor(i)};" title="${b.title}" onclick="window.location='/books/${b.id}/'">
+        ${b.title.substring(0,14)}
+      </div>`
+    ).join('');
+  } catch(e) {}
+}
+
+async function quickBorrow(bookId, btn) {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    showUserToast('Please sign in to borrow books.', 'info');
+    setTimeout(() => window.location.href = '/login/', 1200);
+    return;
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Borrowing…';
+  try {
+    const res = await fetch(`/api/borrowings/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ book: bookId })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      btn.innerHTML = '<i class="fa-solid fa-check me-1"></i>Borrowed!';
+      btn.style.background = '#1a7d4e';
+      showUserToast('Book borrowed successfully!', 'success');
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-hand me-1"></i>Borrow';
+      showUserToast(data.message || 'Could not borrow this book.', 'error');
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-hand me-1"></i>Borrow';
+    showUserToast('Connection error.', 'error');
+  }
+}
+
+function showUserToast(msg, type='info') {
+  const toastEl = document.getElementById('user-toast');
+  if (!toastEl) return;
+  const colors = { success:'#1a7d4e', error:'#b00020', info:'var(--primary-blue)' };
+  toastEl.style.background = colors[type] || colors.info;
+  document.getElementById('user-toast-msg').textContent = msg;
+  new bootstrap.Toast(toastEl, { delay: 3500 }).show();
+}
+
+// Scroll reveal
+function triggerReveal() {
+  const els = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  els.forEach(el => obs.observe(el));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadMiniShelf();
+  loadSection('/api/books/?featured=true&page_size=8',     'featured-books-container',  buildBookCard, 'results');
+  loadSection('/api/books/?ordering=-borrow_count&page_size=8', 'popular-books-container', buildBookCard, 'results');
+  loadSection('/api/categories/?page_size=12',             'categories-grid-container',  buildCategoryCard, 'results');
+  loadSection('/api/books/?ordering=-created_at&page_size=8', 'recently-added-container', buildBookCard, 'results');
+  triggerReveal();
+  loadUserHomepage();
+});
+</script>
+{% endblock %}

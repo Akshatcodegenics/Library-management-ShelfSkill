@@ -1,0 +1,102 @@
+{% extends 'user/base_user.html' %}
+
+{% block title %}Browse Books Catalogue - ShelfSkill{% endblock %}
+
+{% block content %}
+<div class="py-5 mb-4" style="background:#ffffff; border-bottom:1px solid rgba(13,110,253,0.15);">
+  <div class="container text-center">
+    <div class="animate-fade-up">
+      <div style="width:64px;height:64px;background:#e7f1ff;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.8rem;color:#0d6efd;"><i class="fa-solid fa-book-open"></i></div>
+      <h2 class="fw-bold mb-2" style="color:#0a3060;">Library Catalogue</h2>
+      <p class="text-muted mx-auto mb-0" style="max-width: 600px;">Search and filter through our inventory of literature, engineering books, and research material.</p>
+    </div>
+  </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Filter Form -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white p-3">
+        <form id="user-filter-form" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0" id="user-search-input" placeholder="Search by title, ISBN, author, category...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="user-category-filter">
+                    <option value="">All Categories</option>
+                    <option value="Programming & Software">Programming & Software</option>
+                    <option value="Fiction & Literature">Fiction & Literature</option>
+                    <option value="Data Science & AI">Data Science & AI</option>
+                    <option value="Design & UX">Design & UX</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="user-availability-filter">
+                    <option value="">All Copies</option>
+                    <option value="true">Available Now</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">Apply Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Books Cards Container -->
+    <div class="row g-4" id="catalogue-cards-container">
+        <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Loading catalogue...</p></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Read query params from URL if search parameter passed from homepage
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    if (searchParam) {
+        document.getElementById('user-search-input').value = searchParam;
+    }
+
+    const form = document.getElementById('user-filter-form');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        fetchUserCatalogue();
+    });
+
+    fetchUserCatalogue();
+});
+
+async function fetchUserCatalogue() {
+    const search = document.getElementById('user-search-input').value.trim();
+    const category = document.getElementById('user-category-filter').value;
+    const available = document.getElementById('user-availability-filter').value;
+    const container = document.getElementById('catalogue-cards-container');
+
+    let url = '/api/books/?page=1';
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (available) url += `&available=${encodeURIComponent(available)}`;
+
+    container.innerHTML = `<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Searching books...</p></div>`;
+
+    try {
+        const res = await fetchUserApi(url);
+        const data = await res.json();
+        const results = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (results.length === 0) {
+            container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h5>No books match your criteria.</h5><p>Try searching for a different keyword or category.</p></div>`;
+            return;
+        }
+
+        renderBookCards('catalogue-cards-container', results);
+    } catch (e) {
+        container.innerHTML = `<div class="col-12 text-center text-danger py-5">Error loading catalogue.</div>`;
+    }
+}
+</script>
+{% endblock %}

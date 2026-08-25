@@ -1,0 +1,706 @@
+{% extends 'user/base_user.html' %}
+{% load static %}
+
+{% block title %}Interactive Library Shelf — ShelfSkill{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════════════
+   SHELFSKILL — 3D Library Shelf v2
+   ═══════════════════════════════════════════════ */
+
+.shelf-section {
+  position: relative;
+  background: #f8fbff;
+  padding: 52px 0 90px;
+  min-height: 90vh;
+  overflow: hidden;
+}
+.shelf-section::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(13,110,253,0.05) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none; z-index: 0;
+}
+.shelf-container { position: relative; z-index: 2; }
+
+/* ── Floating particles ── */
+.particle {
+  position: absolute; border-radius: 50%;
+  background: rgba(13,110,253,0.08);
+  pointer-events: none;
+  animation: particleFloat linear infinite;
+  z-index: 0;
+}
+@keyframes particleFloat {
+  0%   { transform: translateY(100vh) scale(0.6); opacity: 0; }
+  10%  { opacity: 0.8; }
+  90%  { opacity: 0.5; }
+  100% { transform: translateY(-120px) scale(1); opacity: 0; }
+}
+
+/* ═══ POP ANIMATION ═══ */
+@keyframes popInBook {
+  0%   { transform: scaleY(0) translateY(30px); opacity: 0; transform-origin: bottom; }
+  60%  { transform: scaleY(1.06) translateY(-6px); opacity: 1; }
+  80%  { transform: scaleY(0.98) translateY(2px); }
+  100% { transform: scaleY(1) translateY(0); opacity: 1; }
+}
+@keyframes badgePop {
+  0%   { transform: scale(0); opacity: 0; }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ═══ FILTER BUTTONS ═══ */
+.shelf-filter-group { display:flex; gap:8px; flex-wrap:wrap; }
+.shelf-filter-btn {
+  border:1.5px solid rgba(13,110,253,0.40);
+  background:#fff; color:#0d6efd;
+  font-weight:600; font-size:0.84rem;
+  padding:7px 18px; border-radius:50px;
+  cursor:pointer; display:flex; align-items:center; gap:6px;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.shelf-filter-btn:hover {
+  background:#e7f1ff; transform:translateY(-2px);
+  box-shadow:0 6px 16px rgba(13,110,253,0.18);
+}
+.shelf-filter-btn.active {
+  background:#0d6efd; color:#fff; border-color:#0d6efd;
+  box-shadow:0 6px 20px rgba(13,110,253,0.35);
+  transform:translateY(-2px);
+}
+
+/* ═══ SHELF ROWS ═══ */
+.shelf-row-wrapper { margin-bottom: 72px; }
+.shelf-label {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.shelf-label h5 {
+  color:#0a3060; font-weight:800; font-size:1.05rem;
+  display:flex; align-items:center; gap:8px; margin:0;
+}
+.shelf-label h5 i { color:#0d6efd; }
+.shelf-section-badge {
+  background:#e7f1ff; color:#0d6efd;
+  font-size:0.72rem; font-weight:700;
+  padding:4px 14px; border-radius:50px;
+}
+
+/* ═══ WOODEN SHELF PLANK ═══ */
+.shelf-wood-row {
+  position: relative;
+  background: linear-gradient(180deg,#7b4f2e 0%,#5a3317 40%,#3d2009 80%,#231205 100%);
+  border-top: 3px solid #9c7148;
+  border-bottom: 18px solid #3e1f08;
+  border-radius: 10px 10px 4px 4px;
+  padding: 28px 24px 0 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: visible;
+  perspective: 1200px;
+  box-shadow:
+    0 18px 40px rgba(0,0,0,0.18),
+    inset 0 3px 8px rgba(255,255,255,0.15),
+    inset 0 -3px 8px rgba(0,0,0,0.5);
+  scrollbar-width: thin;
+  scrollbar-color: #8c5b33 #f0f0f0;
+}
+.shelf-wood-row::-webkit-scrollbar { height:6px; }
+.shelf-wood-row::-webkit-scrollbar-track { background:rgba(0,0,0,0.05); border-radius:10px; }
+.shelf-wood-row::-webkit-scrollbar-thumb { background:#8c5b33; border-radius:10px; }
+.shelf-wood-row::after {
+  content:''; position:absolute;
+  bottom:-34px; left:5%; right:5%;
+  height:18px;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0.22) 0%,transparent 75%);
+  filter:blur(5px); pointer-events:none;
+}
+
+/* ═══ BOOK CARD — wider for visible title ═══ */
+.shelf-book-card {
+  flex-shrink: 0;
+  width: 100px;         /* wider: was 80px */
+  cursor: pointer;
+  position: relative;
+  transform-origin: bottom center;
+  opacity: 0;           /* starts hidden, JS animates in */
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Book cover image wrapper */
+.book-cover-wrap {
+  width: 100px;
+  height: 148px;
+  border-radius: 5px 10px 10px 5px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    -5px 3px 12px rgba(0,0,0,0.45),
+    inset 4px 0 8px rgba(255,255,255,0.18),
+    inset -2px 0 5px rgba(0,0,0,0.25);
+  transition: transform 0.38s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.38s ease,
+              filter 0.3s ease;
+}
+.shelf-book-card:hover .book-cover-wrap {
+  transform: translateY(-26px) rotateY(-14deg) scale(1.06);
+  box-shadow:
+    -14px 28px 40px rgba(13,110,253,0.38),
+    0 0 28px rgba(33,150,243,0.35),
+    inset 4px 0 8px rgba(255,255,255,0.18);
+  filter: brightness(1.10);
+  z-index: 30;
+}
+
+.book-cover-img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+  border-radius: 5px 10px 10px 5px;
+}
+
+/* Fallback cover (when image fails) */
+.book-cover-fallback {
+  width: 100%; height: 100%;
+  display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column;
+  border-radius: 5px 10px 10px 5px;
+  padding: 8px 6px;
+}
+.book-cover-fallback i {
+  font-size: 2rem;
+  color: rgba(255,255,255,0.70);
+  margin-bottom: 6px;
+}
+.book-cover-fallback .fallback-abbr {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.88);
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-word;
+  overflow: hidden;
+  max-height: 50px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 1px;
+}
+
+/* Availability badge on cover */
+.book-avail-badge {
+  position: absolute;
+  top: 6px; right: 4px;
+  font-size: 0.6rem; font-weight: 800;
+  padding: 2px 6px; border-radius: 6px;
+  letter-spacing: 0.3px;
+  animation: badgePop 0.4s ease both;
+  z-index: 5;
+}
+.avail-yes { background:#16a34a; color:#fff; }
+.avail-no  { background:#475569; color:#fff; }
+
+/* Rating overlay at bottom of cover */
+.book-rating-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
+  padding: 12px 5px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.book-rating-bar .stars { color: #fbbf24; font-size: 0.55rem; letter-spacing: 1px; }
+.book-rating-bar .val  { color: #fff; font-size: 0.6rem; font-weight: 800; }
+
+/* ★ TITLE LABEL — clearly visible BELOW the book ★ */
+.book-title-label {
+  width: 100px;
+  padding: 6px 4px 12px;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  letter-spacing: 0.2px;
+  word-break: break-word;
+}
+
+/* pop animation */
+.shelf-book-card.pop-animate {
+  animation: popInBook 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+/* Tooltip on hover */
+.shelf-book-card::after {
+  content: attr(data-title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%; transform: translateX(-50%) scale(0.85);
+  background: rgba(10,40,90,0.92);
+  color: #fff; font-size:0.72rem; font-weight:700;
+  padding: 5px 10px; border-radius:8px;
+  white-space: nowrap; max-width:180px;
+  overflow: hidden; text-overflow:ellipsis;
+  pointer-events: none; opacity:0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 50;
+}
+.shelf-book-card:hover::after {
+  opacity: 1; transform: translateX(-50%) scale(1);
+}
+
+/* ═══ EMPTY / LOADING STATES ═══ */
+.shelf-empty {
+  text-align:center; padding:24px 20px;
+  color:#5a7ab5; font-size:0.9rem; width:100%;
+}
+.shelf-empty i { font-size:1.8rem; margin-bottom:8px; color:#cfe2ff; display:block; }
+
+/* ═══ STATS BAR ═══ */
+.shelf-stats-bar {
+  display:flex; gap:20px; flex-wrap:wrap;
+  padding:16px 24px;
+  background:#fff;
+  border:1px solid rgba(13,110,253,0.12);
+  border-radius:16px; margin-bottom:36px;
+  box-shadow:0 2px 12px rgba(13,110,253,0.07);
+}
+.shelf-stat { text-align:center; flex:1; min-width:70px; }
+.shelf-stat-num { font-size:1.4rem; font-weight:800; color:#0a3060; line-height:1; }
+.shelf-stat-lbl { font-size:0.7rem; color:#5a7ab5; text-transform:uppercase; letter-spacing:0.6px; font-weight:600; margin-top:3px; }
+
+/* ═══ PAGE HEADER ═══ */
+.shelf-page-header { text-align:center; padding:12px 0 44px; }
+.shelf-page-title {
+  font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800;
+  color:#0a3060; margin-bottom:10px;
+}
+.shelf-page-subtitle {
+  color:#5a7ab5; font-size:1rem; max-width:560px;
+  margin:0 auto 28px; line-height:1.65;
+}
+
+/* ═══ MODAL ═══ */
+.shelf-modal-header {
+  background:linear-gradient(135deg,#0d6efd 0%,#0a58ca 100%);
+}
+.modal-book-cover {
+  width:100%; max-height:320px; object-fit:cover;
+  border-radius:12px; box-shadow:0 12px 32px rgba(0,0,0,0.18);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="shelf-section">
+  <div id="particles-container"></div>
+
+  <div class="container shelf-container">
+
+    <!-- ── Page Header ── -->
+    <div class="shelf-page-header">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#e7f1ff;border:1px solid rgba(13,110,253,0.18);padding:7px 20px;border-radius:50px;margin-bottom:18px;">
+        <i class="fa-solid fa-book-open-reader" style="color:#0d6efd;"></i>
+        <span style="font-size:0.8rem;font-weight:700;color:#0d6efd;letter-spacing:0.5px;">ShelfSkill — Virtual 3D Library</span>
+      </div>
+      <h1 class="shelf-page-title"><i class="fa-solid fa-building-columns me-2" style="color:#0d6efd;"></i>Interactive Library Shelves</h1>
+      <p class="shelf-page-subtitle">Hover any book to pull it from the shelf. Click to view details &amp; borrow instantly.</p>
+
+      <div class="shelf-filter-group justify-content-center">
+        <button class="shelf-filter-btn active" id="filter-all"       onclick="filterShelf('all',       this)"><i class="fa-solid fa-layer-group"></i>All Shelves</button>
+        <button class="shelf-filter-btn"        id="filter-available" onclick="filterShelf('available', this)"><i class="fa-solid fa-circle-check"></i>Available</button>
+        <button class="shelf-filter-btn"        id="filter-borrowed"  onclick="filterShelf('borrowed',  this)"><i class="fa-solid fa-book-bookmark"></i>My Borrowed</button>
+      </div>
+    </div>
+
+    <!-- ── Stats Bar ── -->
+    <div class="shelf-stats-bar">
+      <div class="shelf-stat"><div class="shelf-stat-num" id="sstat-total">—</div><div class="shelf-stat-lbl">Total Books</div></div>
+      <div class="shelf-stat"><div class="shelf-stat-num" id="sstat-available">—</div><div class="shelf-stat-lbl">On Shelf</div></div>
+      <div class="shelf-stat"><div class="shelf-stat-num" id="sstat-borrowed">—</div><div class="shelf-stat-lbl">Checked Out</div></div>
+      <div class="shelf-stat"><div class="shelf-stat-num" id="sstat-categories">4</div><div class="shelf-stat-lbl">Sections</div></div>
+    </div>
+
+    <!-- ── Shelf Rows ── -->
+    <div class="shelf-row-wrapper" id="wrapper-programming">
+      <div class="shelf-label">
+        <h5><i class="fa-solid fa-code"></i>Shelf 1 — Software &amp; Engineering</h5>
+        <span class="shelf-section-badge">Section A</span>
+      </div>
+      <div class="shelf-wood-row" id="shelf-row-programming">
+        <div class="shelf-empty"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading…</div>
+      </div>
+    </div>
+
+    <div class="shelf-row-wrapper" id="wrapper-fiction">
+      <div class="shelf-label">
+        <h5><i class="fa-solid fa-feather-pointed"></i>Shelf 2 — Literature &amp; Fiction</h5>
+        <span class="shelf-section-badge">Section B</span>
+      </div>
+      <div class="shelf-wood-row" id="shelf-row-fiction">
+        <div class="shelf-empty"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading…</div>
+      </div>
+    </div>
+
+    <div class="shelf-row-wrapper" id="wrapper-science">
+      <div class="shelf-label">
+        <h5><i class="fa-solid fa-brain"></i>Shelf 3 — Data Science &amp; AI</h5>
+        <span class="shelf-section-badge">Section C</span>
+      </div>
+      <div class="shelf-wood-row" id="shelf-row-science">
+        <div class="shelf-empty"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading…</div>
+      </div>
+    </div>
+
+    <div class="shelf-row-wrapper" id="wrapper-general">
+      <div class="shelf-label">
+        <h5><i class="fa-solid fa-books"></i>Shelf 4 — General Collection</h5>
+        <span class="shelf-section-badge">Section D</span>
+      </div>
+      <div class="shelf-wood-row" id="shelf-row-general">
+        <div class="shelf-empty"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Book Detail Modal ── -->
+<div class="modal fade" id="shelfBookModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+      <div class="modal-header shelf-modal-header text-white border-0 py-3">
+        <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="sm-title">
+          <i class="fa-solid fa-book-open"></i> Book Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0 bg-white" id="sm-body">
+        <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ══════════════════════════════════════════════
+   ShelfSkill — Shelf JS v2
+   Real book covers via Open Library + ISBNdb fallback
+══════════════════════════════════════════════ */
+
+let allBooksData = [];
+
+// Blue spine colour palette
+const BLUE_SHADES = [
+  '#0d6efd','#0a58ca','#1565c0','#1976d2',
+  '#1849a8','#2563eb','#3b82f6','#1d4ed8',
+  '#0b5394','#1e40af','#1e88e5','#0074d9'
+];
+
+/* ── Get real cover URL from Open Library ── */
+function getCoverUrl(book) {
+  // 1) Use stored cover_image if it's a real http url
+  if (book.cover_image && book.cover_image.startsWith('http')) return book.cover_image;
+  if (book.cover_image_url && book.cover_image_url.startsWith('http')) return book.cover_image_url;
+
+  // 2) Open Library by ISBN (best quality)
+  if (book.isbn) {
+    const cleanIsbn = book.isbn.replace(/[-\s]/g, '');
+    return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
+  }
+
+  // 3) Open Library by title (reliable fallback)
+  const title = (book.title || '').trim();
+  if (title) {
+    return `https://covers.openlibrary.org/b/title/${encodeURIComponent(title)}-M.jpg`;
+  }
+
+  return null; // Will show fallback div
+}
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/* ── Spawn floating particles ── */
+function spawnParticles() {
+  const c = document.getElementById('particles-container');
+  if (!c) return;
+  for (let i = 0; i < 14; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 26 + 8;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;animation-duration:${10+Math.random()*12}s;animation-delay:${Math.random()*10}s;opacity:${(Math.random()*0.2+0.04).toFixed(2)};`;
+    c.appendChild(p);
+  }
+}
+
+/* ── Load books ── */
+async function loadShelfBooks() {
+  try {
+    const res  = await fetchUserApi('/api/books/?page_size=100');
+    const data = await res.json();
+    allBooksData = data.results || (data.data ? (data.data.results || data.data) : []);
+    updateStats();
+    renderAllShelves(allBooksData);
+  } catch(e) {
+    console.error('Shelf error:', e);
+    ['programming','fiction','science','general'].forEach(id =>
+      setShelfMsg(id, '<i class="fa-solid fa-circle-exclamation"></i><br>Could not load books — refresh to retry.')
+    );
+  }
+}
+
+function updateStats() {
+  const total     = allBooksData.length;
+  const available = allBooksData.filter(b => b.available_copies > 0).length;
+  const borrowed  = allBooksData.filter(b => (b.total_copies||1) - (b.available_copies||0) > 0).length;
+  animCount('sstat-total',     total);
+  animCount('sstat-available', available);
+  animCount('sstat-borrowed',  borrowed);
+}
+
+function animCount(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let cur = 0; const step = Math.ceil(target/25);
+  const iv = setInterval(() => {
+    cur = Math.min(cur+step, target);
+    el.textContent = cur;
+    if (cur >= target) clearInterval(iv);
+  }, 45);
+}
+
+/* ── Category matching ── */
+const CAT = {
+  programming: /program|software|engineer|computer|code|web|javascript|python|java|c\+\+|react|angular|django|flutter|swift|kotlin|algorithm|data structure/i,
+  fiction:     /fiction|literature|novel|story|poetry|drama|fantasy|thriller|romance|mystery|horror|sci-fi|science fiction/i,
+  science:     /data science|machine learn|deep learn|neural|artificial intel|ai|math|physics|biology|chemistry|statistics|analytics/i,
+};
+const cat = (b) => {
+  const field = (b.category||'') + ' ' + (b.genre||'');
+  if (CAT.programming.test(field)) return 'programming';
+  if (CAT.fiction.test(field))     return 'fiction';
+  if (CAT.science.test(field))     return 'science';
+  return 'general';
+};
+
+function renderAllShelves(books) {
+  const groups = { programming:[], fiction:[], science:[], general:[] };
+  books.forEach(b => groups[cat(b)].push(b));
+  Object.keys(groups).forEach(id => renderShelfRow(id, groups[id]));
+}
+
+/* ── Render one shelf ── */
+function renderShelfRow(shelfId, books) {
+  const container = document.getElementById('shelf-row-' + shelfId);
+  if (!container) return;
+
+  if (!books || books.length === 0) {
+    setShelfMsg(shelfId, '<i class="fa-solid fa-book-open"></i><br>No titles on this shelf yet.');
+    return;
+  }
+
+  container.innerHTML = books.map((b, idx) => {
+    const bg      = BLUE_SHADES[idx % BLUE_SHADES.length];
+    const avail   = (b.available_copies || 0) > 0;
+    const rating  = parseFloat(b.rating || 4.5).toFixed(1);
+    const title   = b.title || 'Unknown';
+    const coverUrl = getCoverUrl(b);
+    const stars   = Math.round(parseFloat(rating));
+    const starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+
+    // Abbreviated title for fallback (initials or first 2 words)
+    const abbr = title.split(' ').slice(0, 3).map(w => w.substring(0,6)).join(' ');
+
+    return `
+<div class="shelf-book-card"
+     data-id="${b.id}"
+     data-title="${escapeHtml(title)}"
+     onclick="openShelfModal(${b.id})"
+     tabindex="0" role="button"
+     aria-label="View: ${escapeHtml(title)}">
+
+  <div class="book-cover-wrap" style="background:${bg};">
+
+    ${coverUrl ? `
+    <img
+      src="${coverUrl}"
+      alt="${escapeHtml(title)}"
+      class="book-cover-img"
+      loading="lazy"
+      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+    >` : ''}
+
+    <!-- Fallback (shows when image fails or no url) -->
+    <div class="book-cover-fallback" style="background:${bg}; display:${coverUrl ? 'none' : 'flex'};">
+      <i class="fa-solid fa-book"></i>
+      <span class="fallback-abbr">${escapeHtml(abbr)}</span>
+    </div>
+
+    <!-- Available badge -->
+    <div class="book-avail-badge ${avail ? 'avail-yes' : 'avail-no'}">
+      ${avail ? '✓ In' : '⊗ Out'}
+    </div>
+
+    <!-- Rating bar at bottom of cover -->
+    <div class="book-rating-bar">
+      <span class="stars">${starStr}</span>
+      <span class="val">${rating}</span>
+    </div>
+  </div>
+
+  <!-- ★ TITLE CLEARLY BELOW THE BOOK ★ -->
+  <div class="book-title-label">${escapeHtml(title)}</div>
+</div>`;
+  }).join('');
+
+  // Staggered pop-in
+  container.querySelectorAll('.shelf-book-card').forEach((card, i) => {
+    setTimeout(() => card.classList.add('pop-animate'), i * 65);
+  });
+}
+
+function setShelfMsg(id, html) {
+  const el = document.getElementById('shelf-row-' + id);
+  if (el) el.innerHTML = `<div class="shelf-empty">${html}</div>`;
+}
+
+/* ── Modal ── */
+function openShelfModal(id) {
+  const b = allBooksData.find(x => x.id === id || x.id === String(id));
+  if (!b) return;
+
+  const cover  = getCoverUrl(b);
+  const avail  = (b.available_copies||0) > 0;
+  const rating = parseFloat(b.rating || 4.5).toFixed(1);
+  const bg     = BLUE_SHADES[Math.abs(hashStr(b.title||'')) % BLUE_SHADES.length];
+  const stars  = Math.round(parseFloat(rating));
+  const starStr = '★'.repeat(stars) + '☆'.repeat(5-stars);
+  const authorName = b.author_detail ? b.author_detail.name : (b.author || 'Unknown Author');
+
+  document.getElementById('sm-title').innerHTML = `<i class="fa-solid fa-book-open me-2"></i>${escapeHtml(b.title||'Book Details')}`;
+
+  document.getElementById('sm-body').innerHTML = `
+<div class="row g-0">
+  <div class="col-md-5 d-flex align-items-center justify-content-center p-4"
+       style="background:linear-gradient(135deg,#e7f1ff,#cfe2ff);min-height:300px;">
+    ${cover
+      ? `<img src="${cover}" alt="${escapeHtml(b.title||'')}" class="modal-book-cover"
+              onerror="this.style.display='none'; document.getElementById('modal-cover-fallback').style.display='flex';">
+         <div id="modal-cover-fallback" style="display:none;background:${bg};border-radius:12px;width:160px;height:240px;align-items:center;justify-content:center;flex-direction:column;color:rgba(255,255,255,0.8);">
+           <i class="fa-solid fa-book" style="font-size:3rem;"></i>
+           <div style="font-size:0.7rem;font-weight:800;margin-top:8px;text-align:center;padding:0 8px;">${escapeHtml(b.title||'')}</div>
+         </div>`
+      : `<div style="background:${bg};border-radius:12px;width:160px;height:240px;display:flex;align-items:center;justify-content:center;flex-direction:column;color:rgba(255,255,255,0.8);">
+           <i class="fa-solid fa-book" style="font-size:3rem;"></i>
+           <div style="font-size:0.7rem;font-weight:800;margin-top:8px;text-align:center;padding:0 8px;">${escapeHtml(b.title||'')}</div>
+         </div>`
+    }
+  </div>
+
+  <div class="col-md-7 p-4">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <span style="background:#e7f1ff;color:#0d6efd;padding:5px 14px;border-radius:50px;font-size:0.78rem;font-weight:700;">
+        <i class="fa-solid fa-tag me-1"></i>${escapeHtml(b.category||'General')}
+      </span>
+      <span style="background:${avail?'#d0f0e0':'#f1f5f9'};color:${avail?'#0a6640':'#475569'};padding:5px 14px;border-radius:50px;font-size:0.78rem;font-weight:700;">
+        <i class="fa-solid fa-${avail?'check':'clock'} me-1"></i>${avail ? (b.available_copies)+' of '+(b.total_copies)+' Available' : 'Checked Out'}
+      </span>
+    </div>
+
+    <h4 style="font-weight:800;color:#0a3060;margin-bottom:4px;">${escapeHtml(b.title||'Unknown Title')}</h4>
+    <p style="color:#0d6efd;font-weight:600;margin-bottom:16px;">
+      <i class="fa-solid fa-feather-pointed me-1"></i>${escapeHtml(authorName)}
+    </p>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <span style="font-size:1.1rem;color:#f5a623;">${starStr}</span>
+      <span style="font-weight:700;color:#0a3060;">${rating}/5</span>
+    </div>
+
+    <div style="background:#f8fbff;border:1px solid rgba(13,110,253,0.1);border-radius:12px;padding:14px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="color:#5a7ab5;font-size:0.84rem;">ISBN</span>
+        <code style="color:#0d6efd;font-weight:700;">${escapeHtml(b.isbn||'N/A')}</code>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="color:#5a7ab5;font-size:0.84rem;">Total Copies</span>
+        <span style="font-weight:700;color:#0a3060;">${b.total_copies||1}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#5a7ab5;font-size:0.84rem;">Section</span>
+        <span style="font-weight:700;color:#0a3060;">${escapeHtml(b.category||'General')}</span>
+      </div>
+    </div>
+
+    <div class="d-grid">
+      ${avail
+        ? `<button class="btn btn-primary py-2 fw-bold rounded-pill" onclick="borrowUserBook(${b.id})" style="font-size:1rem;">
+             <i class="fa-solid fa-bookmark me-2"></i>Borrow This Book
+           </button>`
+        : `<button class="btn btn-secondary py-2 fw-bold rounded-pill" disabled style="font-size:1rem;">
+             <i class="fa-solid fa-ban me-2"></i>Currently Unavailable
+           </button>`
+      }
+    </div>
+  </div>
+</div>`;
+
+  new bootstrap.Modal(document.getElementById('shelfBookModal')).show();
+}
+
+/* ── Filter ── */
+async function filterShelf(type, btn) {
+  document.querySelectorAll('.shelf-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  let books = allBooksData;
+  if (type === 'available') {
+    books = books.filter(b => (b.available_copies||0) > 0);
+  } else if (type === 'borrowed') {
+    try {
+      const res  = await fetchUserApi('/api/members/me/borrow-history/');
+      const data = await res.json();
+      const recs = data.results || (data.data ? (data.data.results || data.data) : []);
+      const ids  = recs
+        .filter(r => r.status==='BORROWED' || r.status==='OVERDUE')
+        .map(r => (r.book && typeof r.book==='object') ? r.book.id : r.book);
+      books = books.filter(b => ids.includes(b.id));
+    } catch(e) {
+      books = [];
+    }
+  }
+
+  const groups = { programming:[], fiction:[], science:[], general:[] };
+  books.forEach(b => groups[cat(b)].push(b));
+  Object.keys(groups).forEach(id => renderShelfRow(id, groups[id]));
+}
+
+/* ── Boot ── */
+document.addEventListener('DOMContentLoaded', () => {
+  spawnParticles();
+  loadShelfBooks();
+});
+</script>
+{% endblock %}

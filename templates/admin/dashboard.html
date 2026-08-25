@@ -1,0 +1,186 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Admin Overview Dashboard - Library Control Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold mb-1 text-slate-800"><i class="fa-solid fa-gauge text-primary me-2"></i>Executive System Dashboard</h3>
+            <p class="text-muted mb-0">Overview of inventory, system users, active loans, and fine metrics.</p>
+        </div>
+        <div>
+            <a href="/admin/books/" class="btn btn-primary shadow-sm"><i class="fa-solid fa-plus me-1"></i> Manage Books</a>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Statistics Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card admin-card p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary me-3">
+                    <i class="fa-solid fa-book"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Total Books</span>
+                    <h3 class="fw-bold mb-0 text-slate-800" id="stat-total-books">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card admin-card p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon-wrapper me-3" style="background:#cfe2ff; color:#0a58ca;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Available Copies</span>
+                    <h3 class="fw-bold mb-0 text-slate-800" id="stat-avail-books">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card admin-card p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon-wrapper me-3" style="background:#d7e8ff; color:#1565c0;">
+                    <i class="fa-solid fa-hand-holding-hand"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Borrowed Copies</span>
+                    <h3 class="fw-bold mb-0 text-slate-800" id="stat-borrowed-books">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card admin-card p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon-wrapper me-3" style="background:#b8d4ff; color:#0d47a1;">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Total Users</span>
+                    <h3 class="fw-bold mb-0 text-slate-800" id="stat-total-users">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card admin-card p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon-wrapper me-3" style="background:#cfe2ff; color:#0a58ca;">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Active Members</span>
+                    <h3 class="fw-bold mb-0 text-slate-800" id="stat-active-users">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card admin-card p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon-wrapper me-3" style="background:#e0ebff; color:#1a5fa8;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Overdue Loans</span>
+                    <h3 class="fw-bold mb-0 text-slate-800" id="stat-overdue-books">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card admin-card p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="stat-icon-wrapper me-3" style="background:#d7e8ff; color:#1565c0;">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Total Fines Tracked</span>
+                    <h3 class="fw-bold mb-0 text-slate-800" id="stat-total-fines">$0.00</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Books Management Table Preview -->
+<div class="card admin-card">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+        <h6 class="fw-bold mb-0 text-slate-800"><i class="fa-solid fa-book me-2 text-primary"></i>Recent Inventory Items</h6>
+        <a href="/admin/books/" class="btn btn-outline-primary btn-sm">Full Book Inventory</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cover</th>
+                        <th>Book Title</th>
+                        <th>ISBN</th>
+                        <th>Category</th>
+                        <th>Copies</th>
+                        <th>Available</th>
+                        <th class="text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-dash-books-tbody">
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Loading inventory preview...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    loadAdminDashboard();
+    
+    // Set active sidebar nav link
+    const el = document.getElementById('nav-admin-dashboard');
+    if (el) el.classList.add('active');
+
+    // Load preview books
+    const tbody = document.getElementById('admin-dash-books-tbody');
+    try {
+        const res = await fetchAdminApi('/api/books/?page=1');
+        const data = await res.json();
+        const books = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (books.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No books registered in system.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = books.slice(0, 5).map(b => `
+            <tr>
+                <td><img src="${b.cover_image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80'}" class="rounded" style="width: 40px; height: 50px; object-fit: cover;"></td>
+                <td class="fw-bold">${escapeHtml(b.title)}</td>
+                <td><code>${escapeHtml(b.isbn)}</code></td>
+                <td><span class="badge bg-secondary">${escapeHtml(b.category)}</span></td>
+                <td>${b.total_copies}</td>
+                <td><span class="badge bg-success">${b.available_copies}</span></td>
+                <td class="text-end pe-3">
+                    <a href="/admin/books/" class="btn btn-sm btn-outline-primary">Manage</a>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Failed to load preview.</td></tr>`;
+    }
+});
+</script>
+{% endblock %}

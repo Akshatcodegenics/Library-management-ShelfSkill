@@ -1,0 +1,131 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Create Admin Account - Secret Key Protected{% endblock %}
+
+{% block content %}
+<div class="admin-auth-page">
+  <div class="admin-auth-card">
+    <div class="text-center mb-4">
+      <div class="stat-icon-wrapper mx-auto mb-3" style="background:var(--light-blue); color:var(--primary-blue);">
+        <i class="fa-solid fa-key"></i>
+      </div>
+      <h4 class="fw-bold mb-1" style="color:var(--text-dark);">Create Admin Account</h4>
+      <p class="text-muted small">Requires valid <strong>Admin Secret Key</strong> for authorization</p>
+    </div>
+
+    <div id="admin-reg-alert" class="alert alert-danger d-none"></div>
+
+    <form id="admin-reg-form">
+        <div class="mb-3">
+            <label for="ar-username" class="form-label fw-semibold">Admin Username *</label>
+            <input type="text" class="form-control" id="ar-username" placeholder="admin_john" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="ar-name" class="form-label fw-semibold">Full Name *</label>
+            <input type="text" class="form-control" id="ar-name" placeholder="John Admin" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="ar-email" class="form-label fw-semibold">Admin Email *</label>
+            <input type="email" class="form-control" id="ar-email" placeholder="admin.john@example.com" required>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label for="ar-password" class="form-label fw-semibold">Password *</label>
+                <input type="password" class="form-control" id="ar-password" minlength="6" placeholder="••••••••" required>
+            </div>
+            <div class="col-md-6">
+                <label for="ar-confirm" class="form-label fw-semibold">Confirm Password *</label>
+                <input type="password" class="form-control" id="ar-confirm" minlength="6" placeholder="••••••••" required>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="ar-secret" class="form-label fw-semibold text-primary"><i class="fa-solid fa-lock me-1"></i> Admin Secret Key *</label>
+            <input type="password" class="form-control border-primary" id="ar-secret" placeholder="Enter system secret key" required>
+            <small class="text-muted">Validated strictly on backend. Default dev key: <code>library-admin-secret-2026</code></small>
+        </div>
+
+        <button type="submit" id="ar-btn" class="btn btn-primary w-100 py-2 fw-bold">
+            <span id="ar-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+            Register Administrator
+        </button>
+    </form>
+
+    <hr class="my-4">
+
+    <div class="text-center">
+        <a href="/admin/login/" class="text-muted text-decoration-none small"><i class="fa-solid fa-arrow-left me-1"></i> Back to Admin Login</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('admin-reg-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('ar-username').value.trim();
+        const name = document.getElementById('ar-name').value.trim();
+        const email = document.getElementById('ar-email').value.trim();
+        const password = document.getElementById('ar-password').value;
+        const confirm = document.getElementById('ar-confirm').value;
+        const secretKey = document.getElementById('ar-secret').value.trim();
+
+        const alertBox = document.getElementById('admin-reg-alert');
+        const spinner = document.getElementById('ar-spinner');
+        const btn = document.getElementById('ar-btn');
+
+        if (password !== confirm) {
+            alertBox.textContent = 'Passwords do not match.';
+            alertBox.classList.remove('d-none');
+            return;
+        }
+
+        alertBox.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/auth/admin/register/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, name, email, password, admin_secret_key: secretKey })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                localStorage.setItem('access_token', data.data.access);
+                localStorage.setItem('refresh_token', data.data.refresh);
+                localStorage.setItem('user_role', data.data.user.role);
+                localStorage.setItem('user_name', data.data.user.name || data.data.user.username);
+                localStorage.setItem('user_email', data.data.user.email);
+                localStorage.setItem('user_id', data.data.user.id);
+
+                showAdminToast('Administrator registered successfully!', 'success');
+                setTimeout(() => { window.location.href = '/admin/dashboard/'; }, 500);
+            } else {
+                let msg = data.message || 'Admin registration rejected.';
+                if (data.errors) {
+                    const errs = Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join('<br>');
+                    msg += `<br><small>${errs}</small>`;
+                }
+                alertBox.innerHTML = msg;
+                alertBox.classList.remove('d-none');
+            }
+        } catch (err) {
+            alertBox.textContent = 'Server connection error.';
+            alertBox.classList.remove('d-none');
+        } finally {
+            spinner.classList.add('d-none');
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

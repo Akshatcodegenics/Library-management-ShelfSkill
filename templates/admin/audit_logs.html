@@ -1,0 +1,71 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Audit Logs - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold mb-1 text-slate-800"><i class="fa-solid fa-list-check text-primary me-2"></i>System Audit Activity Logs</h3>
+        <p class="text-muted mb-0">Security audit records of administrative operations and inventory updates.</p>
+    </div>
+</div>
+
+<div class="card admin-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Log ID</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-audit-tbody">
+                    <tr><td colspan="5" class="text-center py-4 text-muted">Loading audit log entries...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireAdminRole();
+    const el = document.getElementById('nav-admin-audit');
+    if (el) el.classList.add('active');
+
+    loadAuditLogsTable();
+});
+
+async function loadAuditLogsTable() {
+    const tbody = document.getElementById('admin-audit-tbody');
+    try {
+        const res = await fetchAdminApi('/api/audit-logs/');
+        const data = await res.json();
+        const logs = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No audit log entries recorded.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = logs.map(l => `
+            <tr>
+                <td><code>#${l.id}</code></td>
+                <td class="fw-bold">${escapeHtml(l.username || 'System')}</td>
+                <td><span class="badge bg-secondary">${escapeHtml(l.action)}</span></td>
+                <td>${escapeHtml(l.details || '-')}</td>
+                <td>${new Date(l.timestamp).toLocaleString()}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Failed to load audit logs.</td></tr>`;
+    }
+}
+</script>
+{% endblock %}

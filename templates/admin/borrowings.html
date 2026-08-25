@@ -1,0 +1,90 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Issue & Return Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold mb-1 text-slate-800"><i class="fa-solid fa-arrow-right-arrow-left text-primary me-2"></i>Issue & Return Loan Management</h3>
+        <p class="text-muted mb-0">Monitor active borrowings, process member book returns, and check overdue items.</p>
+    </div>
+</div>
+
+<div class="card admin-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Loan ID</th>
+                        <th>Book Title</th>
+                        <th>Member Name</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Admin Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-borrowings-tbody">
+                    <tr><td colspan="7" class="text-center py-4 text-muted">Loading loan records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireAdminRole();
+    const el = document.getElementById('nav-admin-borrowings');
+    if (el) el.classList.add('active');
+
+    loadBorrowingsTable();
+});
+
+async function loadBorrowingsTable() {
+    const tbody = document.getElementById('admin-borrowings-tbody');
+    try {
+        const res = await fetchAdminApi('/api/borrow/overdue/');
+        const data = await res.json();
+        const records = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (records.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-success font-weight-bold"><i class="fa-solid fa-circle-check me-2"></i>No active overdue records detected.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = records.map(r => `
+            <tr>
+                <td><code>#${r.id}</code></td>
+                <td class="fw-bold">${escapeHtml(r.book.title)}</td>
+                <td>${escapeHtml(r.member ? r.member.name : 'Member')}</td>
+                <td>${new Date(r.borrowed_date).toLocaleDateString()}</td>
+                <td class="text-danger fw-bold">${new Date(r.due_date).toLocaleDateString()}</td>
+                <td><span class="badge bg-danger">${r.status}</span></td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-success fw-bold" onclick="processAdminReturn(${r.id})">Force Return</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Failed to load loan records.</td></tr>`;
+    }
+}
+
+async function processAdminReturn(id) {
+    if (!confirm('Mark this loan as returned?')) return;
+    try {
+        const res = await fetchAdminApi(`/api/borrow/${id}/return/`, { method: 'POST' });
+        if (res.ok) {
+            showAdminToast('Return processed.', 'success');
+            loadBorrowingsTable();
+        }
+    } catch (e) {
+        showAdminToast('Error processing return.', 'error');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'user/base_user.html' %}
+
+{% block title %}Sign In — ShelfSkill Library{% endblock %}
+
+{% block extra_head %}
+<style>
+.auth-wrapper {
+  min-height: calc(100vh - 130px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 16px;
+  background: #ffffff;
+}
+.auth-card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 48px rgba(13,110,253,0.12);
+  overflow: hidden;
+  max-width: 860px;
+  width: 100%;
+  border: 1px solid rgba(13,110,253,0.10);
+}
+/* Left blue panel */
+.auth-panel {
+  background: linear-gradient(145deg, #0a3060 0%, #0d6efd 100%);
+  padding: 44px 36px;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.auth-panel::before {
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:220px; height:220px; border-radius:50%;
+  background:rgba(255,255,255,0.07); pointer-events:none;
+}
+.auth-panel::after {
+  content:''; position:absolute; bottom:-70px; left:-30px;
+  width:190px; height:190px; border-radius:50%;
+  background:rgba(255,255,255,0.05); pointer-events:none;
+}
+.auth-pill {
+  background:rgba(255,255,255,0.13);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:14px;
+  padding:12px 14px;
+  margin-bottom:10px;
+  display:flex; align-items:center; gap:12px;
+  animation: fadeInUp 0.5s ease both;
+}
+.auth-pill i { color:#fff; font-size:1rem; }
+.auth-pill-title { font-size:0.85rem; font-weight:700; color:#fff; }
+.auth-pill-sub   { font-size:0.72rem; color:rgba(255,255,255,0.65); }
+
+/* Right form */
+.auth-form-panel { padding: 44px 40px; }
+.auth-icon-circle {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg,#0a58ca,#0d6efd);
+  border-radius:20px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem; color:#fff;
+  margin:0 auto 16px;
+  box-shadow:0 6px 20px rgba(13,110,253,0.35);
+  animation: popIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes popIn {
+  0%  { transform:scale(0); opacity:0; }
+  70% { transform:scale(1.1); }
+  100%{ transform:scale(1); opacity:1; }
+}
+.form-control:focus {
+  border-color:#0d6efd;
+  box-shadow:0 0 0 3px rgba(13,110,253,0.15);
+}
+.password-toggle-btn {
+  cursor:pointer; border-left:none;
+  background:#f8f9fa; color:#5a7ab5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="row g-0">
+
+      <!-- Left decorative panel -->
+      <div class="col-lg-5 auth-panel d-none d-lg-flex flex-column">
+        <div style="position:relative;z-index:1;">
+          <div class="d-flex align-items:center gap-2 mb-4">
+            <div style="background:rgba(255,255,255,0.18);border-radius:12px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;">
+              <i class="fa-solid fa-book-open-reader text-white fs-5"></i>
+              <span class="fw-bold fs-5 text-white">ShelfSkill</span>
+            </div>
+          </div>
+          <h3 class="fw-bold text-white mb-2" style="font-size:1.4rem;">Your Gateway to Boundless Knowledge</h3>
+          <p style="color:rgba(255,255,255,0.70);font-size:0.88rem;line-height:1.7;margin-bottom:28px;">Sign in to manage loans, explore digital titles, and elevate your reading journey.</p>
+
+          <div class="auth-pill">
+            <i class="fa-solid fa-bolt"></i>
+            <div><div class="auth-pill-title">Instant Access</div><div class="auth-pill-sub">Fast, secure borrowing &amp; reading</div></div>
+          </div>
+          <div class="auth-pill delay-2">
+            <i class="fa-solid fa-layer-group"></i>
+            <div><div class="auth-pill-title">Organized Shelves</div><div class="auth-pill-sub">Categorized library catalogs</div></div>
+          </div>
+          <div class="auth-pill delay-3">
+            <i class="fa-solid fa-chart-line"></i>
+            <div><div class="auth-pill-title">Track Your Loans</div><div class="auth-pill-sub">Monitor due dates &amp; history</div></div>
+          </div>
+        </div>
+        <div style="position:relative;z-index:1;color:rgba(255,255,255,0.4);font-size:0.75rem;">
+          <i class="fa-solid fa-sparkles me-1"></i> ShelfSkill Digital Library © 2026
+        </div>
+      </div>
+
+      <!-- Right form -->
+      <div class="col-lg-7 auth-form-panel d-flex align-items-center">
+        <div class="auth-form-container w-100" style="max-width:400px;margin:0 auto;">
+          <div class="text-center mb-4">
+            <div class="auth-icon-circle"><i class="fa-solid fa-user-graduate"></i></div>
+            <h4 class="fw-bold mb-1" style="color:#0a3060;">Welcome Back</h4>
+            <p class="text-muted small mb-0">Sign in to your ShelfSkill account</p>
+          </div>
+
+          <div id="user-login-alert" class="alert alert-danger d-none rounded-3 py-2 px-3 small"></div>
+
+          <form id="user-login-form">
+            <div class="mb-3">
+              <label for="u-username" class="form-label fw-semibold small" style="color:#0a3060;">Username or Email</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted rounded-start-3"><i class="fa-regular fa-user"></i></span>
+                <input type="text" class="form-control bg-light border-start-0 rounded-end-3 py-2"
+                       id="u-username" placeholder="Enter username or email" required>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="u-password" class="form-label fw-semibold small" style="color:#0a3060;">Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted rounded-start-3"><i class="fa-solid fa-lock"></i></span>
+                <input type="password" class="form-control bg-light border-start-0 border-end-0 py-2"
+                       id="u-password" placeholder="••••••••" required>
+                <button class="btn btn-light border border-start-0 text-muted rounded-end-3 password-toggle-btn"
+                        type="button" id="togglePassword">
+                  <i class="fa-regular fa-eye" id="togglePasswordIcon"></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="u-login-btn" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm" style="font-size:1rem;">
+              <span id="u-login-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+              <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+            </button>
+          </form>
+
+          <hr class="my-4 opacity-25">
+          <div class="text-center">
+            <p class="text-muted small mb-0">
+              Don't have an account?
+              <a href="/signup/" class="fw-bold text-primary text-decoration-none">Create Free Account</a>
+            </p>
+            <p class="text-muted small mt-2 mb-0">
+              <a href="/" class="text-muted text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i>Back to Home</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Password show/hide toggle
+    const toggleBtn  = document.getElementById('togglePassword');
+    const passInput  = document.getElementById('u-password');
+    const passIcon   = document.getElementById('togglePasswordIcon');
+    if (toggleBtn && passInput && passIcon) {
+        toggleBtn.addEventListener('click', () => {
+            const isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            passIcon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        });
+    }
+
+    const form = document.getElementById('user-login-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('u-username').value.trim();
+        const password = document.getElementById('u-password').value;
+
+        const alertBox = document.getElementById('user-login-alert');
+        const spinner  = document.getElementById('u-login-spinner');
+        const btn      = document.getElementById('u-login-btn');
+
+        alertBox.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        btn.disabled = true;
+
+        try {
+            const res  = await fetch('/api/auth/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                localStorage.setItem('access_token',  data.data.access);
+                localStorage.setItem('refresh_token', data.data.refresh);
+                localStorage.setItem('user_role',     data.data.user.role);
+                localStorage.setItem('user_name',     data.data.user.name || data.data.user.username);
+                localStorage.setItem('user_email',    data.data.user.email);
+                localStorage.setItem('user_id',       data.data.user.id);
+
+                if (typeof showUserToast === 'function') showUserToast('Sign in successful! Welcome back.', 'success');
+
+                // Route based on role
+                const role = (data.data.user.role || '').toUpperCase();
+                if (role === 'ADMIN' || data.data.user.is_admin) {
+                    window.location.href = '/admin/dashboard/';
+                } else {
+                    // MEMBER or AUTHOR both go to user home
+                    window.location.href = '/home/';
+                }
+            } else {
+                alertBox.textContent = data.message || data.detail || 'Invalid credentials. Please try again.';
+                alertBox.classList.remove('d-none');
+            }
+        } catch (err) {
+            alertBox.textContent = 'Connection error. Please try again.';
+            alertBox.classList.remove('d-none');
+        } finally {
+            spinner.classList.add('d-none');
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

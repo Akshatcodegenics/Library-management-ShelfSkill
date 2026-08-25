@@ -1,0 +1,82 @@
+{% extends 'user/base_user.html' %}
+
+{% block title %}Book Information - Bibliotheca{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+        <div class="card-body p-0" id="user-book-detail-box">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 text-muted">Loading book details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const BOOK_ID = "{{ book_id }}";
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserBookDetail(BOOK_ID);
+});
+
+async function loadUserBookDetail(id) {
+    const box = document.getElementById('user-book-detail-box');
+    try {
+        const res = await fetchUserApi(`/api/books/${id}/`);
+        const data = await res.json();
+        if (res.ok && data.success) {
+            const b = data.data;
+            box.innerHTML = `
+                <div class="row g-0">
+                    <div class="col-md-5 bg-light d-flex align-items-center justify-content-center p-4">
+                        <img src="${b.cover_image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80'}" class="img-fluid rounded-3 shadow-sm" style="max-height: 420px; object-fit: cover;" alt="${escapeHtml(b.title)}">
+                    </div>
+                    <div class="col-md-7 p-5">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="category-pill">${escapeHtml(b.category)}</span>
+                            <div class="rating-stars fs-5">
+                                <i class="fa-solid fa-star"></i> ${b.rating || '4.8'} / 5.0
+                            </div>
+                        </div>
+                        <h2 class="fw-extrabold text-dark mb-2">${escapeHtml(b.title)}</h2>
+                        <h5 class="text-primary mb-3"><i class="fa-solid fa-feather me-1"></i> Author: ${escapeHtml(b.author_detail ? b.author_detail.name : 'Unknown Author')}</h5>
+                        
+                        <p class="text-muted mb-4">${escapeHtml(b.author_detail ? b.author_detail.biography || 'No biography details provided.' : '')}</p>
+
+                        <div class="row g-3 mb-4 p-3 bg-light rounded-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">ISBN</small>
+                                <code class="fw-bold text-dark fs-6">${escapeHtml(b.isbn)}</code>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Inventory Availability</small>
+                                <span class="badge ${b.available_copies > 0 ? 'bg-success' : 'bg-danger'} fs-6">
+                                    ${b.available_copies} of ${b.total_copies} Available
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            ${b.available_copies > 0 ? `
+                                <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm" onclick="borrowUserBook(${b.id})">
+                                    <i class="fa-solid fa-bookmark me-2"></i> Borrow Book Now
+                                </button>
+                            ` : `
+                                <button class="btn btn-secondary btn-lg rounded-pill px-5" disabled>Currently Out of Stock</button>
+                            `}
+                            <a href="/books/" class="btn btn-outline-secondary btn-lg rounded-pill px-4">Back to Catalogue</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (e) {
+        box.innerHTML = `<div class="text-center text-danger py-5">Failed to load book detail.</div>`;
+    }
+}
+</script>
+{% endblock %}

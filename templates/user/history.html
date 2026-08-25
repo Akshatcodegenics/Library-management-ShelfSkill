@@ -1,0 +1,83 @@
+{% extends 'user/base_user.html' %}
+
+{% block title %}Borrowing History - ShelfSkill Library{% endblock %}
+
+{% block content %}
+<div class="py-5 mb-4" style="background:#ffffff;">
+  <div class="container text-center">
+    <div class="animate-fade-up">
+      <div style="width:64px;height:64px;background:#e7f1ff;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.8rem;color:#0d6efd;"><i class="fa-solid fa-clock-rotate-left"></i></div>
+      <h3 class="fw-bold mb-1" style="color:#0a3060;">Borrowing History</h3>
+      <p class="text-muted small mb-0">Full log of your active and past book loans.</p>
+    </div>
+  </div>
+</div>
+
+<div class="container mb-5">
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Borrowed Date</th>
+                            <th>Due Date</th>
+                            <th>Returned Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-history-tbody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Loading history...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = getUserAccessToken();
+    if (!token) {
+        window.location.href = '/login/';
+        return;
+    }
+
+    const tbody = document.getElementById('user-history-tbody');
+    try {
+        const res = await fetchUserApi('/api/members/me/borrow-history/');
+        const data = await res.json();
+        const records = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (records.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">No borrowing history recorded yet.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = records.map(r => `
+            <tr>
+                <td class="fw-bold">${escapeHtml(r.book.title)}</td>
+                <td>${escapeHtml(r.book.author_detail ? r.book.author_detail.name : 'Unknown')}</td>
+                <td>${formatDate(r.borrowed_date)}</td>
+                <td>${formatDate(r.due_date)}</td>
+                <td>${r.returned_date ? formatDate(r.returned_date) : '<span class="text-muted">Not Returned</span>'}</td>
+                <td><span class="badge" style="${r.status === 'RETURNED' ? 'background-color:#def7ec;color:#03543f;' : (r.status === 'OVERDUE' ? 'background-color:#ffebe9;color:#cf222e;' : 'background-color:#e7f1ff;color:#0a3060;')}">${r.status}</span></td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Failed to load history.</td></tr>`;
+    }
+});
+
+function formatDate(iso) {
+    if (!iso) return 'N/A';
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+</script>
+{% endblock %}

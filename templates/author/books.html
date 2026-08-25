@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}My Books - Author Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fa-solid fa-book-bookmark text-primary me-2"></i>My Books Catalogue</h2>
+            <p class="text-muted mb-0">View, create, edit, and delete your published library inventory.</p>
+        </div>
+        <a href="/author/books/create/" class="btn btn-success shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i> Add New Book
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>ISBN</th>
+                        <th>Category</th>
+                        <th>Total Copies</th>
+                        <th>Available</th>
+                        <th>Borrowed</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="full-books-body">
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Loading books...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/author.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireRole('AUTHOR');
+    loadAuthorBooksList();
+});
+</script>
+{% endblock %}

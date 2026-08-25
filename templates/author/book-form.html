@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if mode == 'edit' %}Edit Book{% else %}Add New Book{% endif %} - Author Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-md-7 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-dark text-white py-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="fa-solid {% if mode == 'edit' %}fa-pen-to-square{% else %}fa-plus{% endif %} me-2"></i>
+                    {% if mode == 'edit' %}Edit Book Details{% else %}Publish New Book{% endif %}
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div id="form-alert" class="alert alert-danger d-none"></div>
+
+                <form id="book-form">
+                    <div class="mb-3">
+                        <label for="book-title" class="form-label fw-semibold">Book Title *</label>
+                        <input type="text" class="form-control" id="book-title" placeholder="e.g. Enterprise Python Architecture" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="book-isbn" class="form-label fw-semibold">ISBN *</label>
+                            <input type="text" class="form-control" id="book-isbn" placeholder="e.g. 978-0132350884" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="book-category" class="form-label fw-semibold">Category *</label>
+                            <input type="text" class="form-control" id="book-category" placeholder="e.g. Programming, Fiction" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="book-copies" class="form-label fw-semibold">Total Inventory Copies *</label>
+                        <input type="number" class="form-control" id="book-copies" min="1" value="1" required>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="/author/books/" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" id="save-book-btn" class="btn btn-primary px-4 fw-bold shadow-sm">
+                            <span id="save-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                            Save Book
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/author.js' %}"></script>
+<script>
+const FORM_MODE = "{{ mode }}";
+const BOOK_ID = "{{ book_id|default:'' }}";
+
+document.addEventListener('DOMContentLoaded', () => {
+    requireRole('AUTHOR');
+    initBookForm(FORM_MODE, BOOK_ID);
+});
+</script>
+{% endblock %}

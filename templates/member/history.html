@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Borrowing History - Member Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-receipt text-primary me-2"></i>Borrowing History</h2>
+        <p class="text-muted mb-0">Complete historical log of all your previous and active library loans.</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Author</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        <th>Returned Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Loading history...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/member.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireRole('MEMBER');
+    loadBorrowingHistory();
+});
+</script>
+{% endblock %}

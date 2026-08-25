@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShelfSkill — Digital Library Portal</title>
+  <meta name="description" content="ShelfSkill — Your gateway to the digital library. Browse thousands of books or access the administrative control panel.">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  {% load static %}
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #000;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ══════════════════════════════════════
+       FULLSCREEN VIDEO HERO
+    ══════════════════════════════════════ */
+    .video-hero {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* The background video */
+    #hero-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+    }
+
+    /* Subtle dark vignette so text stays readable */
+    .video-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.25) 0%,
+        rgba(0,0,0,0.10) 30%,
+        rgba(0,0,0,0.10) 60%,
+        rgba(0,0,0,0.45) 100%
+      );
+      z-index: 1;
+    }
+
+    /* All content sits above video */
+    .video-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ══════════════════════════════════════
+       TOP NAV BAR
+    ══════════════════════════════════════ */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+    }
+    .brand-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .brand-logo-icon {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: #fff;
+    }
+    .brand-logo-text {
+      font-size: 1.25rem; font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+    .nav-pill-links {
+      display: flex; gap: 8px;
+    }
+    .nav-pill-link {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.88);
+      padding: 7px 18px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.25s ease;
+    }
+    .nav-pill-link:hover {
+      background: rgba(255,255,255,0.24);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* ══════════════════════════════════════
+       CENTRE HERO CONTENT
+    ══════════════════════════════════════ */
+    .hero-centre {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    /* Breadcrumb trail (Discover Books → Search → …) */
+    .step-trail {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 50px;
+      padding: 9px 22px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.92);
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      margin-bottom: 28px;
+      animation: fadeSlideDown 0.7s ease both;
+    }
+    .step-trail span { color: rgba(255,255,255,0.55); font-size: 0.82rem; }
+
+    /* Step cards row — matching the screenshot exactly */
+    .step-cards-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeSlideUp 0.8s ease 0.2s both;
+      margin-bottom: 44px;
+    }
+
+    .step-card {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 18px;
+      padding: 20px 22px;
+      min-width: 120px;
+      max-width: 160px;
+      text-align: left;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .step-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 100%);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .step-card.active,
+    .step-card:hover {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.5);
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+    }
+    .step-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 18px;
+    }
+    .step-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .step-card-icon {
+      width: 28px; height: 28px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem;
+    }
+    .step-card-arrow {
+      width: 26px; height: 26px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem;
+    }
+
+    /* ══════════════════════════════════════
+       PORTAL CARDS (User / Admin)
+    ══════════════════════════════════════ */
+    .portal-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeSlideUp 0.8s ease 0.4s both;
+    }
+
+    .portal-card {
+      background: rgba(255,255,255,0.10);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 22px;
+      padding: 28px 30px;
+      width: 260px;
+      text-align: center;
+      color: #fff;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      text-decoration: none;
+    }
+    .portal-card:hover {
+      background: rgba(255,255,255,0.20);
+      border-color: rgba(255,255,255,0.45);
+      transform: translateY(-6px);
+      box-shadow: 0 24px 50px rgba(0,0,0,0.3);
+      color: #fff;
+    }
+    .portal-icon {
+      width: 56px; height: 56px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin: 0 auto 14px;
+    }
+    .portal-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+    .portal-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.65); margin-bottom: 18px; line-height: 1.5; }
+    .portal-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 50px;
+      padding: 8px 22px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      transition: background 0.2s;
+      width: 100%;
+      justify-content: center;
+    }
+    .portal-btn:hover { background: rgba(255,255,255,0.30); color: #fff; }
+
+    /* Admin key input */
+    .admin-key-wrap {
+      margin-top: 12px;
+      display: none;
+    }
+    .admin-key-input {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      color: #fff;
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .admin-key-input::placeholder { color: rgba(255,255,255,0.45); }
+    .admin-key-input:focus        { border-color: rgba(255,255,255,0.7); }
+    .admin-key-submit {
+      margin-top: 8px;
+      background: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 12px;
+      color: #fff;
+      padding: 9px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .admin-key-submit:hover { background: rgba(255,255,255,0.35); }
+    .key-error { font-size: 0.75rem; color: #ff9090; margin-top: 6px; display: none; }
+
+    /* ══════════════════════════════════════
+       SPARKLE STAR (corner decoration)
+    ══════════════════════════════════════ */
+    .sparkle {
+      position: fixed;
+      bottom: 30px; right: 32px;
+      color: rgba(255,255,255,0.7);
+      font-size: 1.5rem;
+      animation: sparkleGlow 2.5s ease-in-out infinite;
+      z-index: 10;
+    }
+    @keyframes sparkleGlow {
+      0%, 100% { opacity: 0.5; transform: scale(1) rotate(0deg); }
+      50%       { opacity: 1;   transform: scale(1.25) rotate(15deg); }
+    }
+
+    /* ══════════════════════════════════════
+       FOOTER BAR
+    ══════════════════════════════════════ */
+    .bottom-bar {
+      position: relative; z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 40px;
+      background: rgba(0,0,0,0.20);
+      backdrop-filter: blur(10px);
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.5);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .bottom-bar a { color: rgba(255,255,255,0.55); text-decoration: none; }
+    .bottom-bar a:hover { color: #fff; }
+
+    /* ══════════════════════════════════════
+       ANIMATIONS
+    ══════════════════════════════════════ */
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      0%   { transform: scale(0.6); opacity: 0; }
+      70%  { transform: scale(1.06); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    /* Toast */
+    .glass-toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      z-index: 999;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+    .glass-toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .top-nav  { padding: 16px 20px; }
+      .nav-pill-links { display: none; }
+      .step-card { min-width: 90px; max-width: 120px; padding: 14px 14px; }
+      .step-card-title { font-size: 0.82rem; }
+      .portal-card { width: 100%; }
+      .bottom-bar { padding: 14px 20px; flex-direction: column; gap: 6px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Full-screen Video Background ── -->
+<section class="video-hero">
+
+  <video id="hero-video" autoplay muted loop playsinline preload="auto"
+         poster="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1920&q=80">
+    <source src="{% static 'videos/library_hero.mp4' %}" type="video/mp4">
+  </video>
+
+  <div class="video-overlay"></div>
+
+  <div class="video-content">
+
+    <!-- ── Top Nav ── -->
+    <nav class="top-nav">
+      <a class="brand-logo" href="#">
+        <div class="brand-logo-icon"><i class="fa-solid fa-book-open-reader"></i></div>
+        <span class="brand-logo-text">ShelfSkill</span>
+      </a>
+      <div class="nav-pill-links">
+        <a href="/books/" class="nav-pill-link"><i class="fa-solid fa-book me-1"></i>Catalogue</a>
+        <a href="/shelf/" class="nav-pill-link"><i class="fa-solid fa-layer-group me-1"></i>Shelves</a>
+        <a href="/login/" class="nav-pill-link"><i class="fa-solid fa-right-to-bracket me-1"></i>Sign In</a>
+      </div>
+    </nav>
+
+    <!-- ── Hero Centre ── -->
+    <div class="hero-centre">
+
+      <!-- Step breadcrumb trail -->
+      <div class="step-trail">
+        Discover Books <span>→</span> Search <span>→</span> Borrow <span>→</span> Track <span>→</span> Return
+      </div>
+
+      <!-- Step cards row — matching the video screenshot -->
+      <div class="step-cards-row">
+
+        <div class="step-card active" onclick="goTo('/books/')">
+          <div class="step-card-title">Discover<br>Books</div>
+          <div class="step-card-footer">
+            <div class="step-card-icon"><i class="fa-solid fa-table-cells"></i></div>
+            <div class="step-card-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+        </div>
+
+        <div class="step-card" onclick="goTo('/books/?search=')">
+          <div class="step-card-title">Search</div>
+          <div class="step-card-footer">
+            <div class="step-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+          </div>
+        </div>
+
+        <div class="step-card" onclick="goTo('/books/')">
+          <div class="step-card-title">Borrow</div>
+          <div class="step-card-footer">
+            <div class="step-card-icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
+          </div>
+        </div>
+
+        <div class="step-card" onclick="goTo('/my-borrowed/')">
+          <div class="step-card-title">Track</div>
+          <div class="step-card-footer">
+            <div class="step-card-icon"><i class="fa-solid fa-chart-line"></i></div>
+          </div>
+        </div>
+
+        <div class="step-card" onclick="goTo('/my-borrowed/')">
+          <div class="step-card-title">Return</div>
+          <div class="step-card-footer">
+            <div class="step-card-icon"><i class="fa-solid fa-rotate-left"></i></div>
+            <div class="step-card-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Portal cards (User & Admin) ── -->
+      <div class="portal-row">
+
+        <!-- User portal -->
+        <div class="portal-card" onclick="goTo('/home/')">
+          <div class="portal-icon"><i class="fa-solid fa-user-graduate"></i></div>
+          <div class="portal-title">Library Member</div>
+          <div class="portal-sub">Browse books, borrow titles, track loans and manage your reading journey.</div>
+          <a href="/home/" class="portal-btn">
+            <i class="fa-solid fa-arrow-right"></i> Enter Library App
+          </a>
+        </div>
+
+        <!-- Admin portal -->
+        <div class="portal-card" id="admin-portal">
+          <div class="portal-icon"><i class="fa-solid fa-shield-halved"></i></div>
+          <div class="portal-title">Admin Console</div>
+          <div class="portal-sub">Manage inventory, users, loans, and system settings with full control.</div>
+          <button class="portal-btn" onclick="toggleAdminKey()">
+            <i class="fa-solid fa-key"></i> Admin Access
+          </button>
+          <div class="admin-key-wrap" id="admin-key-wrap">
+            <input type="password" class="admin-key-input" id="admin-key-input"
+                   placeholder="Enter secret admin key…"
+                   onkeydown="if(event.key==='Enter')verifyAdminKey()">
+            <button class="admin-key-submit" onclick="verifyAdminKey()">
+              <i class="fa-solid fa-unlock me-1"></i>Unlock Admin Panel
+            </button>
+            <div class="key-error" id="key-error"><i class="fa-solid fa-circle-exclamation me-1"></i>Incorrect key. Try again.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Bottom bar ── -->
+    <div class="bottom-bar">
+      <span>© 2026 ShelfSkill Digital Library. All rights reserved.</span>
+      <span>
+        <a href="/books/">Catalogue</a> &nbsp;·&nbsp;
+        <a href="/shelf/">Shelves</a> &nbsp;·&nbsp;
+        <a href="/login/">Sign In</a>
+      </span>
+    </div>
+
+  </div><!-- /.video-content -->
+</section>
+
+<!-- Sparkle star corner decoration -->
+<div class="sparkle">✦</div>
+
+<!-- Glass toast -->
+<div class="glass-toast" id="glass-toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
+<script>
+  const ADMIN_KEY = 'library-admin-secret-2026';
+
+  function goTo(url) {
+    window.location.href = url;
+  }
+
+  function toggleAdminKey() {
+    const wrap = document.getElementById('admin-key-wrap');
+    const isOpen = wrap.style.display === 'block';
+    wrap.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) {
+      setTimeout(() => document.getElementById('admin-key-input').focus(), 50);
+    }
+  }
+
+  function verifyAdminKey() {
+    const val = document.getElementById('admin-key-input').value.trim();
+    const errEl = document.getElementById('key-error');
+    if (val === ADMIN_KEY) {
+      errEl.style.display = 'none';
+      showToast('✓ Access granted — redirecting to admin…');
+      setTimeout(() => window.location.href = '/admin/login/', 900);
+    } else {
+      errEl.style.display = 'block';
+      document.getElementById('admin-key-input').style.borderColor = 'rgba(255,120,120,0.7)';
+      setTimeout(() => {
+        document.getElementById('admin-key-input').style.borderColor = '';
+      }, 1500);
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('glass-toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  /* Step card hover highlight — sync active */
+  document.querySelectorAll('.step-card').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      document.querySelectorAll('.step-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+    });
+    card.addEventListener('mouseleave', () => {
+      document.querySelectorAll('.step-card').forEach(c => c.classList.remove('active'));
+      document.querySelector('.step-card:first-child').classList.add('active');
+    });
+  });
+
+  /* Video playback failsafe */
+  const vid = document.getElementById('hero-video');
+  vid.addEventListener('error', () => {
+    vid.style.display = 'none';
+    document.querySelector('.video-overlay').style.background =
+      'linear-gradient(135deg, #0a3060 0%, #0d6efd 55%, #1a7fd4 100%)';
+  });
+</script>
+</body>
+</html>

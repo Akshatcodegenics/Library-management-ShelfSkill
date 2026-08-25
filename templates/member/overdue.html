@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Overdue Books - Member Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold mb-1 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Overdue Book Alerts</h2>
+        <p class="text-muted mb-0">List of active loans that have exceeded their scheduled due date.</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-danger">
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Author</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        <th>Days Overdue</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="overdue-table-body">
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Checking overdue records...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/member.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireRole('MEMBER');
+    loadOverdueBooks();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}User Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold mb-1 text-slate-800"><i class="fa-solid fa-users-gear text-primary me-2"></i>User & Member Account Management</h3>
+            <p class="text-muted mb-0">View system accounts, roles, active privileges, and registration timestamps.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card admin-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Assigned Role</th>
+                        <th>Status</th>
+                        <th>Joined Date</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-users-tbody">
+                    <tr><td colspan="7" class="text-center py-4 text-muted">Loading user accounts...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireAdminRole();
+    const el = document.getElementById('nav-admin-users');
+    if (el) el.classList.add('active');
+
+    loadUsersTable();
+});
+
+async function loadUsersTable() {
+    const tbody = document.getElementById('admin-users-tbody');
+    try {
+        const res = await fetchAdminApi('/api/auth/users/');
+        const data = await res.json();
+        const users = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (users.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No accounts registered.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = users.map(u => `
+            <tr>
+                <td><code>#${u.id}</code></td>
+                <td class="fw-bold">${escapeHtml(u.name || u.username)}</td>
+                <td>${escapeHtml(u.username)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td>
+                    <span class="badge ${u.role === 'ADMIN' ? 'bg-danger' : (u.role === 'AUTHOR' ? 'bg-warning text-dark' : 'bg-primary')}">
+                        ${u.role}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${u.is_active ? 'bg-success' : 'bg-secondary'}">
+                        ${u.is_active ? 'Active' : 'Disabled'}
+                    </span>
+                </td>
+                <td>${new Date(u.date_joined).toLocaleDateString()}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Failed to load user accounts.</td></tr>`;
+    }
+}
+</script>
+{% endblock %}

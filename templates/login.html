@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-lg border-0 rounded-3" style="border:1px solid var(--border-blue) !important;">
+            <div class="card-header text-white text-center py-4 rounded-top" style="background:linear-gradient(135deg, var(--primary-blue), var(--primary-dark));">
+                <i class="fa-solid fa-book-reader fs-1 text-white mb-2"></i>
+                <h4 class="fw-bold mb-0">Library Sign In</h4>
+                <small style="color:rgba(255,255,255,0.75);">Sign in to your Member or Author portal</small>
+            </div>
+            <div class="card-body p-4">
+                <div id="login-alert" class="alert alert-danger d-none"></div>
+
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-semibold">Username or Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" placeholder="Enter username or email" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" placeholder="Enter password" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="login-btn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                        <span id="login-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                        Sign In
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <div class="text-center">
+                    <p class="mb-2 text-muted">Don't have an account?</p>
+                    <a href="/register/" class="btn btn-outline-secondary btn-sm w-100">Create New Account</a>
+                </div>
+
+                <div class="mt-4 p-3 bg-light rounded border text-center">
+                    <small class="fw-semibold text-muted d-block mb-1">Demo Credentials:</small>
+                    <small class="d-block text-secondary">Author: <code>author@example.com</code> / <code>password123</code></small>
+                    <small class="d-block text-secondary">Member: <code>member@example.com</code> / <code>password123</code></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // If already logged in, redirect to proper dashboard
+    const token = localStorage.getItem('access_token');
+    const userRole = localStorage.getItem('user_role');
+    if (token && userRole) {
+        window.location.href = userRole === 'AUTHOR' ? '/author/dashboard/' : '/member/dashboard/';
+        return;
+    }
+
+    const form = document.getElementById('login-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        const alertBox = document.getElementById('login-alert');
+        const spinner = document.getElementById('login-spinner');
+        const btn = document.getElementById('login-btn');
+
+        alertBox.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/auth/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                localStorage.setItem('access_token', data.data.access);
+                localStorage.setItem('refresh_token', data.data.refresh);
+                localStorage.setItem('user_role', data.data.user.role);
+                localStorage.setItem('user_name', data.data.user.name || data.data.user.username);
+                localStorage.setItem('user_email', data.data.user.email);
+                localStorage.setItem('user_id', data.data.user.id);
+
+                showToast('Login successful!', 'success');
+                setTimeout(() => {
+                    window.location.href = data.data.user.role === 'AUTHOR' ? '/author/dashboard/' : '/member/dashboard/';
+                }, 500);
+            } else {
+                alertBox.textContent = data.message || 'Invalid credentials.';
+                alertBox.classList.remove('d-none');
+            }
+        } catch (err) {
+            alertBox.textContent = 'Server connection error. Please try again.';
+            alertBox.classList.remove('d-none');
+        } finally {
+            spinner.classList.add('d-none');
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

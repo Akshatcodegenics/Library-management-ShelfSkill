@@ -1,0 +1,497 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+		"name": "Library Management System API",
+		"description": "Production REST API collection for Library Management System built with Django, DRF & JWT.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "author_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "book_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "member_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "borrow_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register Author",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"postman_author\",\n    \"email\": \"postman_author@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"AUTHOR\",\n    \"name\": \"Postman Author\",\n    \"biography\": \"Author registered via Postman collection.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register", ""]
+						}
+					}
+				},
+				{
+					"name": "Register Member",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"postman_member\",\n    \"email\": \"postman_member@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"MEMBER\",\n    \"name\": \"Postman Member\",\n    \"phone\": \"+19998887777\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register", ""]
+						}
+					}
+				},
+				{
+					"name": "Login (Author)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.access) {",
+									"    pm.collectionVariables.set('access_token', jsonData.data.access);",
+									"    pm.collectionVariables.set('refresh_token', jsonData.data.refresh);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"author@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login", ""]
+						}
+					}
+				},
+				{
+					"name": "Login (Member)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.access) {",
+									"    pm.collectionVariables.set('access_token', jsonData.data.access);",
+									"    pm.collectionVariables.set('refresh_token', jsonData.data.refresh);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"member@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login", ""]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/token/refresh/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "token", "refresh", ""]
+						}
+					}
+				},
+				{
+					"name": "Current User Profile (Me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/me/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "me", ""]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Authors",
+			"item": [
+				{
+					"name": "List Authors",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/authors/",
+							"host": ["{{base_url}}"],
+							"path": ["authors", ""]
+						}
+					}
+				},
+				{
+					"name": "Get Author Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/authors/{{author_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["authors", "{{author_id}}", ""]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Books",
+			"item": [
+				{
+					"name": "List Books (With Search & Filters)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/books/?search=Clean&category=Programming&available=true&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["books", ""],
+							"query": [
+								{ "key": "search", "value": "Clean" },
+								{ "key": "category", "value": "Programming" },
+								{ "key": "available", "value": "true" },
+								{ "key": "page", "value": "1" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Book (Author Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Postman Test Driven Architecture\",\n    \"isbn\": \"978-0001112223\",\n    \"category\": \"Software Engineering\",\n    \"total_copies\": 5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/books/",
+							"host": ["{{base_url}}"],
+							"path": ["books", ""]
+						}
+					}
+				},
+				{
+					"name": "Get Book Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/books/{{book_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["books", "{{book_id}}", ""]
+						}
+					}
+				},
+				{
+					"name": "Update Book (Owner Author)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Postman Test Driven Architecture (Edition 2)\",\n    \"isbn\": \"978-0001112223\",\n    \"category\": \"Software Engineering\",\n    \"total_copies\": 8\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/books/{{book_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["books", "{{book_id}}", ""]
+						}
+					}
+				},
+				{
+					"name": "Delete Book (Owner Author)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/books/{{book_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["books", "{{book_id}}", ""]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Members",
+			"item": [
+				{
+					"name": "List / Search Members",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/",
+							"host": ["{{base_url}}"],
+							"path": ["members", ""]
+						}
+					}
+				},
+				{
+					"name": "Get Member Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["members", "{{member_id}}", ""]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Borrowing System",
+			"item": [
+				{
+					"name": "Borrow Book (Member Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_id\": {{book_id}},\n    \"days\": 14\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/borrow/",
+							"host": ["{{base_url}}"],
+							"path": ["borrow", ""]
+						}
+					}
+				},
+				{
+					"name": "Return Book (Member Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/borrow/{{borrow_id}}/return/",
+							"host": ["{{base_url}}"],
+							"path": ["borrow", "{{borrow_id}}", "return", ""]
+						}
+					}
+				},
+				{
+					"name": "Member Borrow History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/me/borrow-history/",
+							"host": ["{{base_url}}"],
+							"path": ["members", "me", "borrow-history", ""]
+						}
+					}
+				},
+				{
+					"name": "Overdue Borrowings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/borrow/overdue/",
+							"host": ["{{base_url}}"],
+							"path": ["borrow", "overdue", ""]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Dashboard Statistics",
+			"item": [
+				{
+					"name": "Get User Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dashboard/",
+							"host": ["{{base_url}}"],
+							"path": ["dashboard", ""]
+						}
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,148 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Authors Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold mb-1 text-slate-800"><i class="fa-solid fa-user-pen text-primary me-2"></i>Authors Management</h3>
+            <p class="text-muted mb-0">Register and manage author biographies and credentials.</p>
+        </div>
+        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addAuthorModal">
+            <i class="fa-solid fa-plus me-1"></i> Add Author
+        </button>
+    </div>
+</div>
+
+<div class="card admin-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Author Name</th>
+                        <th>Email</th>
+                        <th>Biography</th>
+                        <th>Published Books</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-authors-tbody">
+                    <tr><td colspan="5" class="text-center py-4 text-muted">Loading authors...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Author Modal -->
+<div class="modal fade" id="addAuthorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold">Add Author</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="add-author-form">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Author Name *</label>
+                        <input type="text" class="form-control" id="aut-name" placeholder="e.g. Donald Knuth" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email *</label>
+                        <input type="email" class="form-control" id="aut-email" placeholder="knuth@example.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Biography</label>
+                        <textarea class="form-control" id="aut-bio" rows="3" placeholder="Pioneer in computer programming..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Save Author</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireAdminRole();
+    const el = document.getElementById('nav-admin-authors');
+    if (el) el.classList.add('active');
+
+    loadAuthorsTable();
+
+    const form = document.getElementById('add-author-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById('aut-name').value.trim(),
+            email: document.getElementById('aut-email').value.trim(),
+            biography: document.getElementById('aut-bio').value.trim()
+        };
+
+        try {
+            const res = await fetchAdminApi('/api/authors/', { method: 'POST', body: payload });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showAdminToast('Author registered successfully.', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addAuthorModal')).hide();
+                form.reset();
+                loadAuthorsTable();
+            } else {
+                showAdminToast(data.message || 'Failed to add author.', 'error');
+            }
+        } catch (e) {
+            showAdminToast('Server error.', 'error');
+        }
+    });
+});
+
+async function loadAuthorsTable() {
+    const tbody = document.getElementById('admin-authors-tbody');
+    try {
+        const res = await fetchAdminApi('/api/authors/');
+        const data = await res.json();
+        const authors = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (authors.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No authors registered.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = authors.map(a => `
+            <tr>
+                <td class="fw-bold">${escapeHtml(a.name)}</td>
+                <td><code>${escapeHtml(a.email)}</code></td>
+                <td>${escapeHtml(a.biography || '-')}</td>
+                <td><span class="badge bg-primary">${a.books_count || 0} Books</span></td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAuthor(${a.id})"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Failed to load authors.</td></tr>`;
+    }
+}
+
+async function deleteAuthor(id) {
+    if (!confirm('Delete author?')) return;
+    try {
+        const res = await fetchAdminApi(`/api/authors/${id}/`, { method: 'DELETE' });
+        if (res.ok) {
+            showAdminToast('Author deleted.', 'success');
+            loadAuthorsTable();
+        }
+    } catch (e) {
+        showAdminToast('Error deleting author.', 'error');
+    }
+}
+</script>
+{% endblock %}

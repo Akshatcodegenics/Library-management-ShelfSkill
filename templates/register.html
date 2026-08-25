@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center my-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-3" style="border:1px solid var(--border-blue) !important;">
+            <div class="card-header text-white text-center py-4 rounded-top" style="background:linear-gradient(135deg, var(--primary-blue), var(--primary-dark));">
+                <i class="fa-solid fa-user-plus fs-1 text-white mb-2"></i>
+                <h4 class="fw-bold mb-0">Create Account</h4>
+                <small style="color:rgba(255,255,255,0.75);">Register as a Library Author or Member</small>
+            </div>
+            <div class="card-body p-4">
+                <div id="register-alert" class="alert alert-danger d-none"></div>
+
+                <form id="register-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="reg-role" class="form-label fw-semibold">Account Role</label>
+                            <select class="form-select" id="reg-role" required>
+                                <option value="MEMBER" selected>Member (Borrower)</option>
+                                <option value="AUTHOR">Author (Publisher)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="reg-username" class="form-label fw-semibold">Username</label>
+                            <input type="text" class="form-control" id="reg-username" placeholder="johndoe" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="reg-name" class="form-label fw-semibold">Full Name</label>
+                            <input type="text" class="form-control" id="reg-name" placeholder="John Doe" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="reg-email" class="form-label fw-semibold">Email Address</label>
+                            <input type="email" class="form-control" id="reg-email" placeholder="john@example.com" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="reg-password" class="form-label fw-semibold">Password</label>
+                            <input type="password" class="form-control" id="reg-password" placeholder="At least 6 characters" minlength="6" required>
+                        </div>
+
+                        <div class="col-12" id="member-fields">
+                            <label for="reg-phone" class="form-label fw-semibold">Phone Number</label>
+                            <input type="text" class="form-control" id="reg-phone" placeholder="+1 234 567 890">
+                        </div>
+
+                        <div class="col-12 d-none" id="author-fields">
+                            <label for="reg-bio" class="form-label fw-semibold">Biography</label>
+                            <textarea class="form-control" id="reg-bio" rows="2" placeholder="Tell us about yourself and your published works..."></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="register-btn" class="btn btn-warning text-dark w-100 py-2 fw-bold mt-4 shadow-sm">
+                        <span id="register-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                        Register Account
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <div class="text-center">
+                    <p class="mb-0 text-muted">Already have an account? <a href="/login/" class="fw-bold text-decoration-none">Sign In here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const roleSelect = document.getElementById('reg-role');
+    const memberFields = document.getElementById('member-fields');
+    const authorFields = document.getElementById('author-fields');
+
+    roleSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'AUTHOR') {
+            authorFields.classList.remove('d-none');
+            memberFields.classList.add('d-none');
+        } else {
+            memberFields.classList.remove('d-none');
+            authorFields.classList.add('d-none');
+        }
+    });
+
+    const form = document.getElementById('register-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const role = roleSelect.value;
+        const username = document.getElementById('reg-username').value.trim();
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const phone = document.getElementById('reg-phone').value.trim();
+        const biography = document.getElementById('reg-bio').value.trim();
+
+        const alertBox = document.getElementById('register-alert');
+        const spinner = document.getElementById('register-spinner');
+        const btn = document.getElementById('register-btn');
+
+        alertBox.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/auth/register/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role, username, name, email, password, phone, biography })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                localStorage.setItem('access_token', data.data.access);
+                localStorage.setItem('refresh_token', data.data.refresh);
+                localStorage.setItem('user_role', data.data.user.role);
+                localStorage.setItem('user_name', data.data.user.name || data.data.user.username);
+                localStorage.setItem('user_email', data.data.user.email);
+                localStorage.setItem('user_id', data.data.user.id);
+
+                showToast('Registration successful!', 'success');
+                setTimeout(() => {
+                    window.location.href = data.data.user.role === 'AUTHOR' ? '/author/dashboard/' : '/member/dashboard/';
+                }, 500);
+            } else {
+                let errMsg = data.message || 'Registration failed.';
+                if (data.errors) {
+                    const errList = Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join('<br>');
+                    errMsg += `<br><small>${errList}</small>`;
+                }
+                alertBox.innerHTML = errMsg;
+                alertBox.classList.remove('d-none');
+            }
+        } catch (err) {
+            alertBox.textContent = 'Server connection error. Please try again.';
+            alertBox.classList.remove('d-none');
+        } finally {
+            spinner.classList.add('d-none');
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

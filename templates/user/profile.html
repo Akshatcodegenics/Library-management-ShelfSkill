@@ -1,0 +1,65 @@
+{% extends 'user/base_user.html' %}
+
+{% block title %}My Profile - Bibliotheca Library{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 p-3 bg-white">
+                <div class="card-body p-4 text-center">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary mx-auto p-4 mb-3" style="width: 90px; height: 90px;">
+                        <i class="fa-solid fa-user-gear fs-1"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" id="p-name">User Profile</h3>
+                    <p class="text-muted mb-3" id="p-email">user@example.com</p>
+
+                    <span class="badge bg-success px-3 py-2 rounded-pill fs-6 mb-4" id="p-role-badge">Active Member</span>
+
+                    <div class="row g-3 text-start bg-light p-3 rounded-3 mb-4">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Username</small>
+                            <span class="fw-semibold text-dark" id="p-username">-</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Account Status</small>
+                            <span class="badge bg-success" id="p-status">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/my-borrowed/" class="btn btn-primary rounded-pill px-4"><i class="fa-solid fa-book-bookmark me-1"></i> View My Loans</a>
+                        <button class="btn btn-outline-danger rounded-pill px-4" onclick="logoutUserApp()"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = getUserAccessToken();
+    if (!token) {
+        window.location.href = '/login/';
+        return;
+    }
+
+    try {
+        const res = await fetchUserApi('/api/auth/me/');
+        const data = await res.json();
+        if (res.ok && data.success) {
+            const u = data.data;
+            document.getElementById('p-name').textContent = u.name || u.username;
+            document.getElementById('p-email').textContent = u.email;
+            document.getElementById('p-username').textContent = u.username;
+            document.getElementById('p-role-badge').textContent = `${u.role} Account`;
+        }
+    } catch (e) {
+        console.error('Error fetching profile:', e);
+    }
+});
+</script>
+{% endblock %}

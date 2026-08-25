@@ -1,0 +1,43 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}System Settings - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold mb-1 text-slate-800"><i class="fa-solid fa-sliders text-primary me-2"></i>System Security & Configuration</h3>
+        <p class="text-muted mb-0">View backend secret key rules, token durations, and security policies.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card admin-card p-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Admin Account Registration Security</h5>
+            <div class="alert alert-info">
+                <i class="fa-solid fa-shield-halved me-2"></i> Normal users cannot assign themselves the ADMIN role. Creating an admin account via <code>/admin/create-account/</code> requires a valid <strong>Admin Secret Key</strong> validated strictly by the Django backend.
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Configured Secret Key Environment Variable</label>
+                <input type="text" class="form-control" value="ADMIN_SECRET_KEY" readonly>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Default Development Secret Key</label>
+                <input type="text" class="form-control" value="library-admin-secret-2026" readonly>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireAdminRole();
+    const el = document.getElementById('nav-admin-settings');
+    if (el) el.classList.add('active');
+});
+</script>
+{% endblock %}

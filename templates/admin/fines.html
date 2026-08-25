@@ -1,0 +1,92 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Fines Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold mb-1 text-slate-800"><i class="fa-solid fa-sack-dollar text-primary me-2"></i>Overdue Fines Management</h3>
+        <p class="text-muted mb-0">Track penalty fines assessed for overdue book returns ($1.00/day late).</p>
+    </div>
+</div>
+
+<div class="card admin-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fine ID</th>
+                        <th>Member Name</th>
+                        <th>Member Email</th>
+                        <th>Book Title</th>
+                        <th>Fine Amount</th>
+                        <th>Payment Status</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-fines-tbody">
+                    <tr><td colspan="7" class="text-center py-4 text-muted">Loading fines list...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireAdminRole();
+    const el = document.getElementById('nav-admin-fines');
+    if (el) el.classList.add('active');
+
+    loadFinesTable();
+});
+
+async function loadFinesTable() {
+    const tbody = document.getElementById('admin-fines-tbody');
+    try {
+        const res = await fetchAdminApi('/api/fines/');
+        const data = await res.json();
+        const fines = data.results || (data.data ? data.data.results || data.data : []);
+
+        if (fines.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No fines currently assessed.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = fines.map(f => `
+            <tr>
+                <td><code>#${f.id}</code></td>
+                <td class="fw-bold">${escapeHtml(f.member_name)}</td>
+                <td><code>${escapeHtml(f.member_email)}</code></td>
+                <td>${escapeHtml(f.book_title)}</td>
+                <td class="fw-bold text-danger">$${parseFloat(f.amount).toFixed(2)}</td>
+                <td><span class="badge ${f.paid_status ? 'bg-success' : 'bg-warning text-dark'}">${f.paid_status ? 'Paid' : 'Unpaid'}</span></td>
+                <td class="text-end pe-4">
+                    ${!f.paid_status ? `<button class="btn btn-sm btn-outline-success" onclick="markFinePaid(${f.id})">Mark Paid</button>` : '<span class="text-muted">Cleared</span>'}
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Failed to load fines.</td></tr>`;
+    }
+}
+
+async function markFinePaid(id) {
+    try {
+        const res = await fetchAdminApi(`/api/fines/${id}/`, {
+            method: 'PATCH',
+            body: { paid_status: True }
+        });
+        if (res.ok) {
+            showAdminToast('Fine marked as paid.', 'success');
+            loadFinesTable();
+        }
+    } catch (e) {
+        showAdminToast('Error updating fine.', 'error');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Details - Library System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-book me-2 text-warning"></i>Book Information</h5>
+                <a href="/member/books/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Back to Catalog</a>
+            </div>
+            <div class="card-body p-4" id="book-detail-container">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Fetching book details...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/member.js' %}"></script>
+<script>
+const BOOK_ID = "{{ book_id }}";
+
+document.addEventListener('DOMContentLoaded', () => {
+    requireRole('MEMBER');
+    loadBookDetail(BOOK_ID);
+});
+</script>
+{% endblock %}
